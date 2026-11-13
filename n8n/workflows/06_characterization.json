@@ -1,0 +1,256 @@
+{
+  "name": "06 Automatic characterization",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "characterization",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "e193d81f-0c5d-54b1-9cae-150860cccf44",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "7e4eb2de-86e6-5899-83cd-ea4dc9f7e1c8"
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = $json.body || {};\nif (!b.experiment_id) throw new Error('experiment_id is required');\nreturn [{ json: { ...b, idempotency_key: b.idempotency_key || $execution.id } }];"
+      },
+      "id": "b9971d80-d6d8-5938-aef5-64703d82b55e",
+      "name": "Prepare",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BP_API_URL }}/api/experiments/{{ $json.experiment_id }}/characterize",
+        "options": {
+          "timeout": 600000
+        }
+      },
+      "id": "e8d93cf3-76c1-5435-a0b8-9defae832c59",
+      "name": "Characterize",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.BP_API_URL }}/api/experiments/{{ $('Prepare').item.json.experiment_id }}",
+        "options": {
+          "timeout": 600000
+        }
+      },
+      "id": "583bd9fe-38fb-5ec1-857e-526aac598f34",
+      "name": "Get experiment",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BP_API_URL }}/api/n8n/executions",
+        "options": {
+          "timeout": 600000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({workflow: \"06_characterization\", execution_id: $execution.id, idempotency_key: $(\"Prepare\").item.json.idempotency_key, status: \"SUCCESS\", result: $json}) }}"
+      },
+      "id": "dc7800a3-2da0-53e4-b631-a79b4d1194e3",
+      "name": "Record execution",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify(['Get experiment', 'Characterize'].map(n => $(n)).find(n => n.isExecuted).item.json) }}",
+        "options": {}
+      },
+      "id": "42d2f342-0ce2-5cb1-967a-9d7eb250075c",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1100,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BP_API_URL }}/api/errors",
+        "options": {
+          "timeout": 600000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({source: \"n8n 06_characterization\", execution_id: $execution.id, experiment_id: $(\"Prepare\").item.json.experiment_id || null, error: $json.error || $json}) }}"
+      },
+      "id": "3e2abd04-9444-59ab-84ee-5664247d147c",
+      "name": "Report error",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        220
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({status: \"FAILED\", detail: $json}) }}",
+        "options": {
+          "responseCode": 500
+        }
+      },
+      "id": "ec2858b2-73e5-5ace-9eb0-93f47b27fc52",
+      "name": "Respond error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1100,
+        220
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Prepare",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare": {
+      "main": [
+        [
+          {
+            "node": "Characterize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Characterize": {
+      "main": [
+        [
+          {
+            "node": "Get experiment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Report error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get experiment": {
+      "main": [
+        [
+          {
+            "node": "Record execution",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Report error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record execution": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Report error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Report error": {
+      "main": [
+        [
+          {
+            "node": "Respond error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all"
+  },
+  "meta": {
+    "generatedBy": "make_workflows.py"
+  },
+  "pinData": {}
+}

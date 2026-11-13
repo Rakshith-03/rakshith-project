@@ -1,0 +1,307 @@
+{
+  "name": "02 Automated experiment execution",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "experiment-execution",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "30f9f619-be14-5ace-8d73-4ed6437608c0",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "09ff625c-cad7-5e0c-9b9c-f32898c92f0c"
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = $json.body || {};\nif (!b.config) throw new Error('config is required');\nreturn [{ json: { ...b, idempotency_key: b.idempotency_key || $execution.id } }];"
+      },
+      "id": "2a4c7b94-5c6f-5712-bef7-ad23811d13c1",
+      "name": "Prepare",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BP_API_URL }}/api/experiments",
+        "options": {
+          "timeout": 600000
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Idempotency-Key",
+              "value": "={{ $('Prepare').item.json.idempotency_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({profile_id: $json.profile_id || 'INR18650-20R', config: $json.config}) }}"
+      },
+      "id": "d05616a3-d59b-595a-aba1-8b48f4cf9310",
+      "name": "Run experiment",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BP_API_URL }}/api/experiments/{{ $json.id }}/characterize",
+        "options": {
+          "timeout": 600000
+        }
+      },
+      "id": "97736d50-7bd8-528a-9949-ff4f42b8e8bf",
+      "name": "Characterize",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BP_API_URL }}/api/experiments/{{ $('Run experiment').item.json.id }}/diagnostics",
+        "options": {
+          "timeout": 600000
+        }
+      },
+      "id": "372ad6d4-00c7-5d00-b9be-e19b9cb02d3e",
+      "name": "Diagnostics",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BP_API_URL }}/api/n8n/executions",
+        "options": {
+          "timeout": 600000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({workflow: \"02_experiment-execution\", execution_id: $execution.id, idempotency_key: $(\"Prepare\").item.json.idempotency_key, status: \"SUCCESS\", result: $json}) }}"
+      },
+      "id": "31418aa1-0375-57dc-9e69-8b528ff53c71",
+      "name": "Record execution",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify(['Diagnostics', 'Characterize', 'Run experiment'].map(n => $(n)).find(n => n.isExecuted).item.json) }}",
+        "options": {}
+      },
+      "id": "94ca7160-221e-525d-be0d-c0a8066333da",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1320,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BP_API_URL }}/api/errors",
+        "options": {
+          "timeout": 600000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({source: \"n8n 02_experiment-execution\", execution_id: $execution.id, experiment_id: $(\"Prepare\").item.json.experiment_id || null, error: $json.error || $json}) }}"
+      },
+      "id": "1322ef25-51b1-5c07-b713-436685c8d69d",
+      "name": "Report error",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        220
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({status: \"FAILED\", detail: $json}) }}",
+        "options": {
+          "responseCode": 500
+        }
+      },
+      "id": "1dfc1f28-e9f0-532f-9acb-94532047e94c",
+      "name": "Respond error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1320,
+        220
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Prepare",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare": {
+      "main": [
+        [
+          {
+            "node": "Run experiment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run experiment": {
+      "main": [
+        [
+          {
+            "node": "Characterize",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Report error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Characterize": {
+      "main": [
+        [
+          {
+            "node": "Diagnostics",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Report error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Diagnostics": {
+      "main": [
+        [
+          {
+            "node": "Record execution",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Report error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record execution": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Report error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Report error": {
+      "main": [
+        [
+          {
+            "node": "Respond error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all"
+  },
+  "meta": {
+    "generatedBy": "make_workflows.py"
+  },
+  "pinData": {}
+}

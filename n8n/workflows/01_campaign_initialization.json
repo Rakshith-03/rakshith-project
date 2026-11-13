@@ -1,0 +1,229 @@
+{
+  "name": "01 Campaign initialization",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "campaign-initialization",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "70ed2f2c-9d75-501c-aa87-f933aedccf8a",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "d98abaec-972a-5378-9ea6-e8b3a338d5cd"
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = $json.body || {};\nconst key = b.idempotency_key || $execution.id;\nreturn [{ json: { ...b, idempotency_key: key } }];\n// experiments[] = [{profile_id, config}] validated by the backend; the campaign ID is created there"
+      },
+      "id": "130eb64b-ff90-51d3-8069-94ac26fbf1cf",
+      "name": "Prepare",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BP_API_URL }}/api/campaigns",
+        "options": {
+          "timeout": 600000
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Idempotency-Key",
+              "value": "={{ $('Prepare').item.json.idempotency_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({name: $json.name, experiments: $json.experiments || []}) }}"
+      },
+      "id": "792efd37-e362-5900-8b87-342a2248ad33",
+      "name": "Create campaign",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BP_API_URL }}/api/n8n/executions",
+        "options": {
+          "timeout": 600000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({workflow: \"01_campaign-initialization\", execution_id: $execution.id, idempotency_key: $(\"Prepare\").item.json.idempotency_key, status: \"SUCCESS\", result: $json}) }}"
+      },
+      "id": "fcde8cf0-8397-5de0-a074-65a7d638da7f",
+      "name": "Record execution",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify(['Create campaign'].map(n => $(n)).find(n => n.isExecuted).item.json) }}",
+        "options": {}
+      },
+      "id": "485ccd26-cb81-51ce-b26a-bbd5ca393da9",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BP_API_URL }}/api/errors",
+        "options": {
+          "timeout": 600000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({source: \"n8n 01_campaign-initialization\", execution_id: $execution.id, experiment_id: $(\"Prepare\").item.json.experiment_id || null, error: $json.error || $json}) }}"
+      },
+      "id": "be4f9eba-2d16-56dc-bf03-2517f54102bb",
+      "name": "Report error",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        220
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({status: \"FAILED\", detail: $json}) }}",
+        "options": {
+          "responseCode": 500
+        }
+      },
+      "id": "f115bf9d-5d8c-54c5-b5f0-068daea0df40",
+      "name": "Respond error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        220
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Prepare",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare": {
+      "main": [
+        [
+          {
+            "node": "Create campaign",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create campaign": {
+      "main": [
+        [
+          {
+            "node": "Record execution",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Report error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record execution": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Report error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Report error": {
+      "main": [
+        [
+          {
+            "node": "Respond error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all"
+  },
+  "meta": {
+    "generatedBy": "make_workflows.py"
+  },
+  "pinData": {}
+}

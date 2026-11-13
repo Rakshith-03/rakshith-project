@@ -1,0 +1,256 @@
+{
+  "name": "10 Report generation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "report-generation",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "0e3967ed-1611-5eee-a010-e4a3c0761569",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "37aed364-59db-57a3-8fd9-f6ee343ba9ae"
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = $json.body || {};\nif (!b.experiment_id) throw new Error('experiment_id is required');\nreturn [{ json: { ...b, idempotency_key: b.idempotency_key || $execution.id } }];"
+      },
+      "id": "a0647a4a-964c-51d0-86bf-2adb149e350e",
+      "name": "Prepare",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BP_API_URL }}/api/experiments/{{ $json.experiment_id }}/report",
+        "options": {
+          "timeout": 600000
+        }
+      },
+      "id": "158ab5d4-5087-52c5-aca6-98204de54e8d",
+      "name": "Experiment report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BP_API_URL }}/api/reports/technical",
+        "options": {
+          "timeout": 600000
+        }
+      },
+      "id": "5c49039c-4019-5b26-9b73-11ace528788c",
+      "name": "Technical report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BP_API_URL }}/api/n8n/executions",
+        "options": {
+          "timeout": 600000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({workflow: \"10_report-generation\", execution_id: $execution.id, idempotency_key: $(\"Prepare\").item.json.idempotency_key, status: \"SUCCESS\", result: $json}) }}"
+      },
+      "id": "586ef2fd-a7d7-5cd0-9fb2-3e967958fa54",
+      "name": "Record execution",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify(['Technical report', 'Experiment report'].map(n => $(n)).find(n => n.isExecuted).item.json) }}",
+        "options": {}
+      },
+      "id": "f56ffbde-8c80-5c86-b23a-8cdafb7b3bf9",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1100,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BP_API_URL }}/api/errors",
+        "options": {
+          "timeout": 600000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({source: \"n8n 10_report-generation\", execution_id: $execution.id, experiment_id: $(\"Prepare\").item.json.experiment_id || null, error: $json.error || $json}) }}"
+      },
+      "id": "b613e811-a0a1-5b71-b3a8-fa1e6c3bd6e6",
+      "name": "Report error",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        220
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({status: \"FAILED\", detail: $json}) }}",
+        "options": {
+          "responseCode": 500
+        }
+      },
+      "id": "3b6d0887-57d3-537b-9b67-a0f71a08cb13",
+      "name": "Respond error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1100,
+        220
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Prepare",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare": {
+      "main": [
+        [
+          {
+            "node": "Experiment report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Experiment report": {
+      "main": [
+        [
+          {
+            "node": "Technical report",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Report error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Technical report": {
+      "main": [
+        [
+          {
+            "node": "Record execution",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Report error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record execution": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Report error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Report error": {
+      "main": [
+        [
+          {
+            "node": "Respond error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all"
+  },
+  "meta": {
+    "generatedBy": "make_workflows.py"
+  },
+  "pinData": {}
+}

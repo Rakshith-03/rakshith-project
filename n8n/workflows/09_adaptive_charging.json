@@ -1,0 +1,220 @@
+{
+  "name": "09 Adaptive charging optimization",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "adaptive-charging",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "3912c953-cec6-5845-aeca-c4eb3bbfabac",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "96749730-0176-53c7-bd9a-a388cb448d58"
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = $json.body || {};\nif (!b.target_soc) throw new Error('target_soc is required');\nreturn [{ json: { ...b, idempotency_key: b.idempotency_key || $execution.id } }];"
+      },
+      "id": "ec789584-1c90-5c2d-99f8-0d106c3d326f",
+      "name": "Prepare",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BP_API_URL }}/api/charging/optimize",
+        "options": {
+          "timeout": 600000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({profile_id: $json.profile_id || 'INR18650-20R', initial_soc: $json.initial_soc, target_soc: $json.target_soc, target_time_s: $json.target_time_s, health: $json.health || {} }) }}"
+      },
+      "id": "6e279a79-2136-5c67-b82f-adeeb7cb1806",
+      "name": "Optimize",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BP_API_URL }}/api/n8n/executions",
+        "options": {
+          "timeout": 600000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({workflow: \"09_adaptive-charging\", execution_id: $execution.id, idempotency_key: $(\"Prepare\").item.json.idempotency_key, status: \"SUCCESS\", result: $json}) }}"
+      },
+      "id": "052c217a-71e4-50f1-bf75-23d9906942f7",
+      "name": "Record execution",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify(['Optimize'].map(n => $(n)).find(n => n.isExecuted).item.json) }}",
+        "options": {}
+      },
+      "id": "5e8be2f3-f782-578f-9dc4-533696e68dc2",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BP_API_URL }}/api/errors",
+        "options": {
+          "timeout": 600000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({source: \"n8n 09_adaptive-charging\", execution_id: $execution.id, experiment_id: $(\"Prepare\").item.json.experiment_id || null, error: $json.error || $json}) }}"
+      },
+      "id": "fa140654-9f1c-520d-9d53-28eff518a0d4",
+      "name": "Report error",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        220
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({status: \"FAILED\", detail: $json}) }}",
+        "options": {
+          "responseCode": 500
+        }
+      },
+      "id": "4e373237-22f7-5b1d-81be-a7ebcd392650",
+      "name": "Respond error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        220
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Prepare",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare": {
+      "main": [
+        [
+          {
+            "node": "Optimize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Optimize": {
+      "main": [
+        [
+          {
+            "node": "Record execution",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Report error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record execution": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Report error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Report error": {
+      "main": [
+        [
+          {
+            "node": "Respond error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all"
+  },
+  "meta": {
+    "generatedBy": "make_workflows.py"
+  },
+  "pinData": {}
+}

@@ -1,0 +1,56 @@
+{
+  "id": "LIION_INR18650-20R_ECM_2RC_H_v2",
+  "version": 2,
+  "chemistry": "Li-ion NMC (LiNiMnCo/graphite per CALCE data page)",
+  "cell": "INR18650-20R, 2000 mAh rated (CALCE); manufacturer UNVERIFIED",
+  "approval": "APPROVED - LIION_INR18650-20R_ECM_2RC_H_v1 val RMSE 11.410 mV vs candidate 11.410 mV",
+  "status": "VALIDATED (worst test RMSE 16.9 mV vs 25 mV threshold)",
+  "source_run": "MATLAB Drive/battery_platform/liion/results/drivecycle_20261112_024805",
+  "params": {
+    "R0_ohm": 0.0738506311404,
+    "Q_Ah": 2.06689334569,
+    "R1_ohm": 0.00881936844205,
+    "tau1_s": 8.67716764765,
+    "R2_ohm": 0.0167212557577,
+    "tau2_s": 67.2618503875,
+    "M_V": 0.0214277662977,
+    "gamma": 22.6461273818
+  },
+  "ocv": {
+    "source": "SP1 C/20 pseudo-OCV (CALCE file 11_5_2015_low current OCV test_SP20-1.xlsx), top anchored to measured 2 h rest after CV",
+    "V_rest_full": 4.183,
+    "z_end": 0.89,
+    "gap_end": 0.0655,
+    "matlab_checkpoints": {
+      "0.0": 2.747,
+      "0.125": 3.4835,
+      "0.25": 3.586,
+      "0.5": 3.677568,
+      "0.75": 3.916,
+      "0.89": 4.0825,
+      "0.895": 4.084912,
+      "0.945": 4.111036,
+      "1.0": 4.161572
+    }
+  },
+  "matlab_test_metrics_mV": {
+    "US06_50SOC": {
+      "MAE": 9.76,
+      "RMSE": 15.36
+    },
+    "US06_80SOC": {
+      "MAE": 11.06,
+      "RMSE": 16.87
+    },
+    "BJDST_50SOC": {
+      "MAE": 11.73,
+      "RMSE": 14.76
+    },
+    "BJDST_80SOC": {
+      "MAE": 11.37,
+      "RMSE": 15.92
+    }
+  },
+  "validity_envelope": "25 C; discharge 0-4 A; charge 0-2.2 A; accuracy degrades below 10 % SOC (27-42 mV RMSE)",
+  "thermal": "PROVISIONAL: C_th = 45 J/K (45 g CALCE spec x 1000 J/kg/K ASSUMED), R_th = 10 K/W ASSUMED"
+}

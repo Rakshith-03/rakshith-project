@@ -1,0 +1,73 @@
+{
+  "id": "LIION_INR18650-20R_ECM_2RC_H_v5",
+  "version": 5,
+  "chemistry": "Li-ion NMC (LiNiMnCo/graphite per CALCE data page)",
+  "cell": "INR18650-20R, 2000 mAh rated (CALCE); manufacturer UNVERIFIED",
+  "approval": "REJECTED - physically implausible (at bound: ['dOCV@0.0', 'dOCV@0.9']); val RMSE 8.724 mV vs approved 11.410 mV",
+  "status": "NOT APPROVED",
+  "source_run": "python recalibration",
+  "params": {
+    "R0_ohm": 0.0738506311404,
+    "Q_Ah": 2.06689334569,
+    "R1_ohm": 0.00881936844205,
+    "tau1_s": 8.67716764765,
+    "R2_ohm": 0.0167212557577,
+    "tau2_s": 67.2618503875,
+    "M_V": 0.0214277662977,
+    "gamma": 22.6461273818
+  },
+  "ocv": {
+    "source": "SP1 C/20 pseudo-OCV (CALCE file 11_5_2015_low current OCV test_SP20-1.xlsx), top anchored to measured 2 h rest after CV",
+    "V_rest_full": 4.183,
+    "z_end": 0.89,
+    "gap_end": 0.0655,
+    "matlab_checkpoints": {
+      "0.0": 2.747,
+      "0.125": 3.4835,
+      "0.25": 3.586,
+      "0.5": 3.677568,
+      "0.75": 3.916,
+      "0.89": 4.0825,
+      "0.895": 4.084912,
+      "0.945": 4.111036,
+      "1.0": 4.161572
+    }
+  },
+  "validity_envelope": "25 C; discharge 0-4 A; charge 0-2.2 A; accuracy degrades below 10 % SOC (27-42 mV RMSE)",
+  "thermal": "PROVISIONAL: C_th = 45 J/K (45 g CALCE spec x 1000 J/kg/K ASSUMED), R_th = 10 K/W ASSUMED",
+  "parent": "LIION_INR18650-20R_ECM_2RC_H_v2",
+  "structure": "ocv_delta_only",
+  "ocv_delta": {
+    "knots": [
+      0.0,
+      0.1,
+      0.2,
+      0.35,
+      0.5,
+      0.65,
+      0.8,
+      0.9,
+      1.0
+    ],
+    "values_V": [
+      -0.029999900888215962,
+      0.00827117429854741,
+      0.00556239333290307,
+      0.005731259407581387,
+      0.006148867630122035,
+      -0.026395758449278706,
+      -0.011285965637006559,
+      0.029984196659143657,
+      0.0
+    ],
+    "note": "fitted on TRAIN files only (SP2 DST); corrects SP1-vs-SP2 OCV mismatch"
+  },
+  "calibration": "python least_squares on SP2 DST 50/80 % (train only)",
+  "simulink_equivalence": "pending: export ocv table to MATLAB and rerun RUN_SIMULINK_EQUIVALENCE",
+  "validation_rmse_mV": {
+    "FUDS_50SOC": 9.427083741811485,
+    "FUDS_80SOC": 8.0211519997478
+  },
+  "test_rmse_mV": null,
+  "created_at": "2026-11-12 03:27:54"
+}

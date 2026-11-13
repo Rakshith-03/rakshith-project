@@ -1,0 +1,67 @@
+{
+  "task": "soc_regressor",
+  "version": 3,
+  "algorithm": "gradient boosting",
+  "features": [
+    "V",
+    "I",
+    "I_mean10",
+    "I_mean60",
+    "I_mean300",
+    "V_mean60",
+    "V_min300",
+    "V_max300",
+    "dV10"
+  ],
+  "candidates_val_rmse": {
+    "ridge (baseline)": 0.041698182099805886,
+    "random forest": 0.043970103855361244,
+    "gradient boosting": 0.03759888287853038
+  },
+  "val_rmse": 0.03759888287853038,
+  "test_rmse": 0.06883679665759367,
+  "test_per_file": {
+    "US06_50SOC": {
+      "RMSE": 0.046743236717600986,
+      "MaxAE": 0.13152822672216674
+    },
+    "US06_80SOC": {
+      "RMSE": 0.05862868763192781,
+      "MaxAE": 0.15277936929439262
+    },
+    "BJDST_50SOC": {
+      "RMSE": 0.07800145527010828,
+      "MaxAE": 0.253407759604005
+    },
+    "BJDST_80SOC": {
+      "RMSE": 0.08190721673633942,
+      "MaxAE": 0.2642096020138473
+    }
+  },
+  "split": {
+    "train": [
+      "DST_50SOC",
+      "DST_80SOC"
+    ],
+    "val": [
+      "FUDS_50SOC",
+      "FUDS_80SOC"
+    ],
+    "test": [
+      "US06_50SOC",
+      "US06_80SOC",
+      "BJDST_50SOC",
+      "BJDST_80SOC"
+    ]
+  },
+  "split_unit": "file (drive-cycle test)",
+  "data": "MEASURED: CALCE INR18650-20R SP2 25 C drive cycles",
+  "target": "coulomb-counted reference SOC",
+  "n_train": 3455,
+  "n_val": 3613,
+  "n_test": 7104,
+  "acceptance": "val RMSE not worse than previous approved and test RMSE <= 0.05",
+  "approval": "REJECTED",
+  "trained_at": "2026-11-12 11:20:27",
+  "source_type": "experimental"
+}

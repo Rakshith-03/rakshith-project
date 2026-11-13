@@ -1,0 +1,325 @@
+<!doctype html><html><head><meta charset='utf-8'><title>Technical report</title><style>body{font:14px/1.5 system-ui,sans-serif;max-width:1000px;margin:24px auto;padding:0 16px;color:#222}table{border-collapse:collapse;margin:8px 0}th,td{border:1px solid #ccc;padding:3px 8px;text-align:left}th{background:#f3f3f3}pre{background:#f7f7f7;padding:8px;overflow:auto}img{max-width:100%}</style></head><body><h1>Multi-chemistry battery characterization and software BMS: technical report</h1><p>Compiled 2026-11-12T12:07:04 from the project's dated reports. Each section states its data type (MEASURED / CALCULATED / ESTIMATED / SIMULATED / PROVISIONAL).</p><h2>nicd_inspection.md</h2><pre style='white-space:pre-wrap'># Dataset inspection: Ni-Cd
+Generated 2026-11-12T00:51:37 by tools/inspect_datasets.py
+
+| Field | Value |
+|---|---|
+| File | NiCd_Simulation_Ready.xlsx (XLSX, 1 sheet) |
+| SHA-256 | `426ad34c3a3a09665a3bd50977711d3fbf8e5e8bae7f10ce673ff92966a522b5` |
+| Chemistry | Ni-Cd (from filename only) |
+| Manufacturer / model | UNKNOWN |
+| Cell configuration | UNKNOWN (voltage range 1.20-1.37 V implies a single cell) |
+| Nominal voltage | UNKNOWN (not stated; 1.2 V is typical for Ni-Cd, but that is an assumption) |
+| Rated capacity | UNKNOWN |
+| Rows / columns | 961 / [&#x27;Time_min&#x27;, &#x27;Current_A&#x27;, &#x27;Temperature_C&#x27;, &#x27;SOC_percent&#x27;, &#x27;OCV_V&#x27;, &#x27;Terminal_Voltage_V&#x27;, &#x27;Data_Status&#x27;] |
+| Sampling interval | [1.0] min |
+| Missing values | 0 |
+| Duplicate rows | 0 |
+| Data_Status column | [&#x27;Simulated/model-derived; OCV endpoints measured&#x27;] |
+
+## Phases (segmented on current changes; sign convention: + = charge)
+|   start_min |   end_min |   current_A |   soc_start |       soc_end |
+|------------:|----------:|------------:|------------:|--------------:|
+|           0 |       599 |        0.08 |           0 |  99.8333      |
+|         600 |       659 |        0    |         100 | 100           |
+|         660 |       960 |       -0.16 |         100 |   3.29847e-13 |
+
+## Provenance findings
+- OCV is an exact linear function of SOC: OCV = 0.001630*SOC% + 1.2060 V, max residual 4.4e-16 V.
+- (V_terminal - OCV) / I = 0.030000 Ohm on every non-zero-current sample (std 0.0e+00): a fixed R0, with no polarization dynamics.
+- Temperature is a smooth first-order curve with no sensor noise.
+- The file labels itself &quot;Simulated/model-derived; OCV endpoints measured&quot;.
+
+**Classification: SIMULATED / MODEL-DERIVED.** Only the two OCV endpoints
+(1.206 V and 1.369 V) are stated to be measured. This file cannot calibrate or validate a Ni-Cd model:
+fitting would just recover the generator&#x27;s own parameters (R0 = 0.03 Ohm, linear OCV), so any match would be circular.
+
+Approval status: **REJECTED as experimental reference**. It can be kept as a SIMULATED regression fixture.
+</pre><h2>liion_inspection.md</h2><pre style='white-space:pre-wrap'># Dataset inspection: Li-ion
+Generated 2026-11-12T00:51:37 by tools/inspect_datasets.py
+
+| Field | Value |
+|---|---|
+| File | Panasonic_NCR18650B_Consolidated.mat (MAT v5) |
+| SHA-256 | `5a50d0e275e36a0f7fc5923ec1bd4a3f72e5010513b0f401db4071533f4afb30` |
+| Battery | Panasonic NCR18650B (file metadata) |
+| Chemistry / subtype | Li-ion; the NCR18650B is commonly listed as NCA, but the file does not state it -&gt; UNVERIFIED |
+| Cells | 92 (one column per cell) |
+| Nominal voltage / rated capacity | UNKNOWN in file (datasheet values not imported; must be entered and marked MANUFACTURER-RATED) |
+| Current | **NOT PRESENT** |
+| Temperature | **NOT PRESENT** |
+| Cycling / ageing history | **NOT PRESENT** |
+| NaN values | 0 in all arrays |
+| File notes | Consolidated from supplied Panasonic NCR18650B files. POCV and pulse data are kept in native matrix form: rows=samples, columns=cells. Z_imag is preserved raw because matching frequency/cell metadata and Z_real were not supplied. |
+
+## Pseudo-OCV (POCV)
+- 5000 SOC points (0-1 normalised; capacity in Ah not given) x 92 cells, charge and discharge branches.
+- Charge branch 2.688-4.200 V; discharge branch 2.500-4.178 V.
+- Charge/discharge gap at 50 % SOC: 64.2 mV mean (hysteresis plus residual IR at the POCV rate).
+- Cell-to-cell spread at 50 % SOC: 2.36 mV std.
+
+## Pulse tests (rows=samples, columns=cells, zero-padded)
+| Pulse | Valid samples/cell | Median dt | Duration | Largest voltage step |
+|---|---|---|---|---|
+| positive | 2212-2214 | 1.000 s | 1849 s | -79.7 mV (std 1.4) |
+| negative | 2213-2214 | 1.000 s | 1849 s | +77.4 mV (std 16.4) |
+
+Both directions apply a step at about t = 9 s and remove it at about t = 19 s (a 10 s pulse), then roughly 30 min of relaxation.
+Because **pulse current is not recorded**, R0/R1 cannot be reported in ohms. Without the current, only these are supported:
+dV amplitudes, the ratio of instantaneous step to 10 s polarisation, and relaxation time constants (tau = R1*C1).
+
+## EIS
+Z_imag_raw is (92, 70). Z_real and the frequency vector are missing, so it cannot be used for a fit -&gt; NOT USABLE.
+
+## What this dataset supports
+| Quantity | Status |
+|---|---|
+| OCV-SOC curve (charge, discharge, mean) | MEASURED |
+| OCV hysteresis | CALCULATED from measurements |
+| Cell-to-cell variation (OCV, pulse dV) | CALCULATED, 92 cells |
+| Polarisation time constants | ESTIMABLE by fitting relaxation |
+| R0, R1 in ohms; C1 in farads | BLOCKED: pulse current missing |
+| Capacity (Ah), SOH, coulombic efficiency | BLOCKED: no current or capacity |
+| Thermal R_th / C_th | BLOCKED: no temperature |
+
+Independent validation is possible **by cell**: 92 cells allow train/validation/test splits at cell level with no time-series leakage.
+
+Approval status: **APPROVED (partial)** for OCV and pulse-shape work. **NEEDS REVIEW** for anything that needs current or temperature.
+</pre><h2>matlab_drive_inventory.md</h2><pre style='white-space:pre-wrap'># MATLAB environment and MATLAB Drive inventory
+Inspected 2026-11-12 in MATLAB Online (Chrome), by reading screenshots of the Command Window.
+
+## Environment
+- MATLAB 26.2.0.3437455 (R2026b) Update 2, MATLAB Online, 121 products.
+- Licensed: Simulink, Simscape, Simscape Electrical, Simscape Battery, Optimization, Global Optimization,
+  Statistics and ML, Deep Learning, Model Predictive Control, Control System, Simulink Design Optimization,
+  System Identification, Curve Fitting, Signal Processing, MATLAB Report Generator, Stateflow (16 of 16 checked).
+- Integration constraint: MATLAB Online cannot be reached by the MATLAB Engine API for Python from this PC.
+  Options are file exchange through MATLAB Drive, or a local MATLAB install for batch/Engine runs.
+
+## Battery-related files in MATLAB Drive (excluding .session and Examples)
+- `Panasonic_NCR18650B_Consolidated.mat` (same name as the local copy)
+- `battery_baseline/` : earlier &quot;Ester 18650 4S1P&quot; project
+  - `Simulink/models/Ester18650_4S1P_Baseline_Model.slx`, `models/ester_4s1p_phase12.slx`, `models/ester_4s1p_baseline.cir`
+  - `scripts/run_master_battery_baseline.m`, `battery_baseline.m`
+  - `data/CALCE/11_5_2015_low current OCV test_SP20-1.xlsx` (+ the same file zipped)
+  - `data/processed/ester_101pt_ocv_soc_grid.csv`, `ester_experimental_soc_checkpoints.csv`
+  - `results/*.csv|mat` (baseline DB, phase1 charge, phase2 discharge 0.4/1/2 A, CALCE comparison, validation metrics)
+  - `figures/*.png`
+- `Examples/R2026a/simscapeelectrical/BatteryDCFastChargingExample/` : MathWorks example plus user edits (`claud.slx`, `battery_pertubati...`, `untitled*.m/.slx`)
+- Unrelated: AEB_*, convulation*.m, controlled_time_signal4.m, ev1 christ.m, untitled*.m
+
+**No Ni-Cd file exists in MATLAB Drive.** No Panasonic pulse-current or temperature files were found either.
+
+## battery_baseline/README.md: provenance statements (quoted from the file)
+- Ester target specs are user supplied. CALCE INR 18650-20R 2 Ah NMC/graphite is reference data, not Ester.
+- OCV curve is a synthetic prior; outputs are simulated.
+- ECM/thermal and matched-cell parameters are assumptions.
+- SOH and target validation unavailable without Ester cycling data.
+
+## CALCE INR 18650-20R (Samsung, NMC), sheet &quot;SP20-OCVSOC-0.05C&quot;: MEASURED
+- 169,412 rows: Duration (s), Pgm step (0-6), mV, mA, Temperature
+- 47.1 h; current -107..+135 mA (about C/20); voltage 2.496-4.205 V
+- Temperature: only 1 valid reading (23 C) -&gt; thermal calibration BLOCKED
+- Integrated discharge throughput: 2.152 Ah (C/20 measured capacity; rated 2.0 Ah per README)
+- Supports: OCV-SOC (charge/discharge), measured capacity, and R0 from current-step transitions (current is recorded)
+</pre><h2>liion_validation_run_20261112_013326.md</h2><pre style='white-space:pre-wrap'># Li-ion calibration / validation, run 20261112_013326
+Executed in MATLAB Online R2026b by `battery_platform/liion/RUN_LIION_CALIBRATION_VALIDATION.m`.
+Outputs in MATLAB Drive: `battery_platform/liion/results/20261112_013326/`
+(liion_validation_summary.json, calce_R_events.csv, calce_ocv_soc.csv, liion_validation.png).
+Numbers below were copied from the run&#x27;s console output.
+
+## CALCE INR18650-20R (primary calibration, MEASURED)
+| Item | Value | Provenance |
+|---|---|---|
+| Rows | 169,412 | |
+| Missing V / I / T | 0 / 0 / 169,411 | temperature effectively absent |
+| Duplicate rows | 0 | |
+| Non-monotonic timestamps | **5** (not yet diagnosed) | dt median 1.00 s, max 7 s |
+| Discharge capacity, C/20 | **2.1569 Ah** at -0.0996 A mean | CALCULATED from measured current |
+| Charge throughput | 1.9262 Ah at 0.0995 A (charge stopped near 4.15 V, so not a full charge) | CALCULATED |
+| R_fast (1-2 s apparent, not pure R0) | **0.1996 Ohm** (mean of train events 2to3, 5to6) | CALCULATED |
+| RC, 2-branch, step-6 relaxation | R1 0.0310 Ohm, tau1 **100.0 s (at upper bound)**, R2 0.0813 Ohm, tau2 2251 s; fit RMSE 0.33 mV | ESTIMATED, in-sample only |
+
+Apparent resistance per current step (1 mV / 1 mA resolution):
+| Event | Role | dI (A) | dV (V) | R_app (Ohm) | Held-out error |
+|---|---|---|---|---|---|
+| 1to2 (end of CV, high SOC) | test | -0.0990 | -0.0190 | 0.1919 | -0.76 mV |
+| 2to3 (discharge start, ~100 % SOC) | train | -0.1010 | -0.0180 | 0.1782 | - |
+| 4to5 (charge start, ~0 % SOC) | test | +0.1010 | +0.0220 | 0.2178 | -1.84 mV |
+| 5to6 (charge end) | train | -0.0950 | -0.0210 | 0.2211 | - |
+
+## Panasonic NCR18650B (held-out cells; split 60/16/16 by cell, seed 20261112)
+| Test | Validation cells | **Test cells (unseen)** |
+|---|---|---|
+| OCV: train-mean pseudo-OCV vs each cell, [MAE RMSE MaxAE Bias] mV | 1.358 / 1.559 / 3.835 / -0.758 | **1.105 / 1.309 / 3.124 / 0.105**, R2 ≈ 1 |
+| Positive-pulse relaxation | 1-RC 1.081 vs 2-RC 0.468 mV RMSE -&gt; 2-RC chosen | **RMSE 0.432 mV, MaxAE 1.768 mV** |
+| Negative-pulse relaxation | 1-RC 0.694 vs 2-RC 0.270 mV RMSE -&gt; 2-RC chosen | **RMSE 0.280 mV, MaxAE 1.244 mV** |
+
+Pulse shape parameters (k = fraction of the off-jump, tau in s):
+- positive: k1 0.137 / tau1 4.25, k2 0.0972 / tau2 104
+- negative: k1 0.0984 / tau1 3.43, k2 0.0876 / tau2 54.7
+
+Cross-cell comparison only (different manufacturer, not validation): CALCE pseudo-OCV vs Panasonic test cells, MAE 40.9 mV.
+
+## Verdicts (thresholds are editable engineering defaults)
+| Item | Status |
+|---|---|
+| CALCE R_fast | VALIDATED (max held-out error 1.84 mV ≤ 3 mV), **on only 2 held-out events** |
+| CALCE RC | ESTIMATED, in-sample only; tau1 sits on its bound -&gt; not identified |
+| CALCE pseudo-OCV | CALCULATED, no independent OCV test |
+| Panasonic OCV | VALIDATED (1.11 ≤ 10 mV MAE) |
+| Panasonic +pulse shape | VALIDATED (0.432 ≤ 2 mV RMSE) |
+| Panasonic -pulse shape | VALIDATED (0.28 ≤ 2 mV RMSE) |
+
+## Limitations
+- Panasonic validation shows that a population model predicts unseen cells **of the same type**. It says nothing about resistances in ohms (pulse current missing), temperature or ageing.
+- CALCE is a C/20 test only. Dynamic terminal-voltage generalisation is **not demonstrated**; that needs CALCE DST/US06/FUDS data.
+- R_fast mixes R0 with sub-second dynamics (1 s sampling), and rises at low SOC (0.218 vs about 0.19 Ohm).
+- The 5 non-monotonic CALCE timestamps and the figure have not been inspected yet.
+- Not in Simulink yet. The equations are MATLAB code; the Simulink model must be checked against this code.
+</pre><h2>liion_drivecycle_validation_20261112_015732.md</h2><pre style='white-space:pre-wrap'># Li-ion drive-cycle validation, MATLAB run drivecycle_20261112_015732
+Executed in MATLAB Online R2026b: `battery_platform/liion/RUN_LIION_DRIVECYCLE_VALIDATION.m`
+Outputs (MATLAB Drive): `battery_platform/liion/results/drivecycle_20261112_015732/` (summary JSON, test_error_by_soc.csv, test_overlay_US06_80SOC.png)
+Raw data in MATLAB Drive: `battery_platform/data/raw/CALCE_INR18650-20R/` (fetched by bp_fetch_calce; provenance in DATA/RAW_REFERENCE/LITHIUM_ION/CALCE_INR18650-20R/PROVENANCE.md)
+
+Cell: CALCE INR18650-20R, LiNiMnCo/graphite, 2000 mAh rated (CALCE data page). 25 C; temperature not logged.
+Roles (no file used twice): OCV = SP1 C/20 | fit = SP2 DST 50/80 % | model selection = SP2 FUDS 50/80 % | **test = SP2 US06 + BJDST 50/80 % (unseen)**.
+Scored samples: drive-cycle steps with measured V &gt; 3.0 V (fixed by the data, independent of parameters).
+
+## Capacity and OCV
+- Q: SP1 C/20 2.1569 Ah | SP3 C/20 2.0802 Ah | SP2 1C 2.0281 Ah (all CALCULATED from measured current)
+- SP3 pseudo-OCV vs SP1 (independent cell): MAE 8.63, RMSE 12.05, MaxAE 32.08, Bias +8.56 mV.
+  The maximum is at SOC 1.0, inside the SP1 region extrapolated above SOC 0.895 (22 grid points), where the SP1 charge branch stopped at about 4.15 V.
+
+## Model selection (lsqnonlin, bounded; no parameter at a bound in any candidate)
+| Candidate | Train RMSE (DST) | Validation RMSE (FUDS) |
+|---|---|---|
+| 1RC | 14.76 mV | 12.98 |
+| 1RC + hysteresis | 13.82 | 11.45 |
+| 2RC | 14.15 | 12.13 |
+| **2RC + hysteresis (selected)** | 13.72 | **11.41** |
+
+Selected model `LIION_INR18650-20R_ECM_2RC_H_v1` (ESTIMATED by fitting on DST):
+R0 0.0739 Ohm, Q 2.0669 Ah, R1 0.0088 Ohm, tau1 8.68 s, R2 0.0167 Ohm, tau2 67.3 s, M 0.0214 V, gamma 22.65.
+
+## Independent test (never used for fitting or selection)
+| Test | N | MAE | RMSE | MaxAE | Bias |
+|---|---|---|---|---|---|
+| US06 50 % | 6809 | 9.76 | 15.36 | 137.49 | -6.08 mV |
+| US06 80 % | 10659 | 11.06 | 16.87 | 225.92 | -1.46 |
+| BJDST 50 % | 6890 | 11.73 | 14.76 | 107.36 | -9.95 |
+| BJDST 80 % | 11159 | 11.37 | 15.92 | 181.84 | -2.12 |
+
+**Status: VALIDATED** (worst test RMSE 16.9 mV vs 25 mV threshold; the threshold is an editable engineering default, not a standard).
+
+Test RMSE (mV) by modelled SOC band (test_error_by_soc.csv):
+| Test | 0-10 % | 10-20 % | 20-50 % | 50-80 % | 80-100 % |
+|---|---|---|---|---|---|
+| US06 50 % | 32.8 | 11.5 | 6.2 | 4.3 | - |
+| US06 80 % | 41.5 | 14.1 | 6.7 | 11.0 | 9.0 |
+| BJDST 50 % | 27.4 | 15.4 | 8.9 | 4.5 | - |
+| BJDST 80 % | 38.1 | 14.2 | 8.6 | 9.7 | 9.1 |
+
+## Baseline: SP1 C/20 parameters only (comparison)
+RMSE: US06 50/80 133.74 / 126.55 mV; BJDST 50/80 108.94 / 97.67 mV.
+Parameters from a 0.1 A test do not transfer to 1-4 A drive cycles. The earlier &quot;R_fast VALIDATED&quot; applies only to about 0.1 A steps.
+
+## Cross-implementation check
+An independent Python prototype of the same method (scratch, not a deliverable) gave the same test metrics within 0.01 mV and the same model selection.
+The SP3-vs-SP1 OCV metric differs (prototype MAE 8.23, max 25.7 mV) because the prototype left out the extrapolated top-of-charge points.
+
+## Limitations and weaknesses found
+- **Below 10 % SOC the model is weak** (27-42 mV RMSE; worst errors at 2-4 % SOC near 3.0 V). The OCV comes from another cell, and the knee region dominates.
+- Validated at 25 C only. 0 C / 45 C files exist at CALCE but are not used. No thermal validation is possible (no temperature logged).
+- One test cell (SP2) for dynamics. Generalisation across cells is shown only for OCV (SP3) and capacity spread (2.08-2.16 Ah).
+- Not yet in Simulink. Next step: build the Simulink model and require it to reproduce these MATLAB results.
+</pre><h2>simulink_equivalence_20261112_020624.md</h2><pre style='white-space:pre-wrap'># Simulink equivalence, run simulink_eq_20261112_020624
+Model: `MATLAB Drive/battery_platform/simulink/MULTI_CHEMISTRY_BATTERY_LAB.slx`, built by `bp_build_slx.m` from standard blocks
+(Integrator, Gain, Sum, Abs, Sign, Product, 1-D Lookup Table). Continuous time, ode23t, RelTol 1e-7, MaxStep 1 s.
+The current input is a From Workspace block with zero-order hold and zero-crossing detection.
+Parameters: `LIION_INR18650-20R_ECM_2RC_H_v1` from run drivecycle_20261112_015732. OCV: SP1 C/20 table.
+Runner: `RUN_SIMULINK_EQUIVALENCE.m`. Output: `battery_platform/liion/results/simulink_eq_20261112_020624/simulink_equivalence.json`.
+
+| Test (unseen) | Sim time | Simulink vs MATLAB RMSE | MaxAE | Simulink vs measured RMSE | MAE |
+|---|---|---|---|---|---|
+| US06 50 % | 1.3 s | 0.0080 mV | 0.0614 mV | 15.36 mV | 9.76 mV |
+| US06 80 % | 1.5 s | 0.0138 | 0.1236 | 16.87 | 11.06 |
+| BJDST 50 % | 0.5 s | 0.0020 | 0.0162 | 14.76 | 11.73 |
+| BJDST 80 % | 0.6 s | 0.0003 | 0.0032 | 15.92 | 11.37 |
+
+Thresholds (editable): RMSE ≤ 0.5 mV and MaxAE ≤ 2 mV -&gt; **EQUIVALENT**.
+The Simulink model reproduces the validated MATLAB model, and its error against the measurements matches the MATLAB validation.
+
+## Scope of the .slx so far
+It contains only the Li-ion electrical core (SOC, OCV, R0, 2 RC branches, hysteresis) plus the current input.
+Chemistry selector, thermal, ageing, charger, perturbation/ripple generators, cell pack, balancing, BMS estimator,
+protection and logging subsystems are **not built yet**. Thermal parameters cannot be calibrated: no temperature data is available.
+</pre><h2>generators_thermal_constraints_tests.md</h2><pre style='white-space:pre-wrap'># Current generator, thermal model and constraint monitor: test results
+MATLAB Online run `battery_platform/liion/results/gen_thermal_&lt;timestamp&gt;/`, from `RUN_GENERATORS_THERMAL_CONSTRAINTS.m`
+(tests.csv, ripple_frequency_response.csv, constraints_*.csv, generators_thermal.png, summary.json).
+Model: `MULTI_CHEMISTRY_BATTERY_LAB.slx`, rebuilt by `bp_build_slx.m` with the Current_Generator, LiIon_ECM and Thermal_Model subsystems.
+
+## Result: 10 / 10 PASS (on the second run; see &quot;Failure fixed&quot; below)
+| Test | Result |
+|---|---|
+| T1 generators off, US06 80 % | Simulink vs validated MATLAB model: RMSE 0.011 mV, MaxAE 0.10 mV |
+| T2a pulse current | max \|I - I_ref\| = 0 A off switching edges; peak 3.0000 A = total pulse current (not base + pulse); 3 pulses |
+| T2b pulse voltage response | matches the MATLAB model: RMSE 0.0000 mV; voltage swing 294.7 mV |
+| T3 ripple current | max error 2.8e-14 A; ripple RMS 0.35355 A (expected 0.35355) |
+| T4a amplitude sweep (0.1 Hz) | voltage ripple 18.545 / 37.089 / 74.178 mV for 0.25 / 0.5 / 1 A: exactly linear |
+| T4b frequency response | \|Z\| = 0.08208 / 0.07418 / 0.07385 Ohm at 0.01 / 0.1 / 1 Hz, matching analytic \|Z(jw)\| to &lt; 1e-5 relative |
+| T5 thermal (PROVISIONAL) | steady Q = 0.3976 W = I^2(R0+R1+R2); energy balance residual 3.98e-(exponent cut off on screen; full value in tests.csv) J, within the 0.1 % of ∫Q pass limit; 2 A for 3000 s -&gt; +3.97 K |
+| T6a stress test (6 A continuous from 8 % SOC) | undervoltage CRITICAL (min 2.135 V), discharge current WARNING (beyond validated 4 A), low SOC CRITICAL |
+| T6b normal pulse test | NORMAL |
+
+T4b also checks the integration end to end: the Simulink ripple response reproduces the analytic impedance of the validated parameters,
+R0 + R1/(1+jw tau1) + R2/(1+jw tau2) + (dOCV/dz)/(jw 3600 Q).
+
+## Failure fixed during this work
+The first run failed T6a. 6 A *pulses* from 8 % SOC only reached 2.654 V, so the monitor correctly reported WARNING (&lt; 2.80 V), not CRITICAL.
+The test scenario was wrong, not the monitor. It was replaced with 6 A continuous for 190 s (0.32 Ah demanded vs about 0.17 Ah available).
+
+## Model weakness found (open)
+Running the monitor on the simulated US06 80 % profile gives **overvoltage CRITICAL** during the 600 s rest right after the full CC-CV charge.
+The model rests at **4.257 V**, while the measured cell rests at about 4.196 V. Cause: at SOC = 1 the model adds the full hysteresis offset (M = 21 mV) to an OCV
+that is extrapolated above 89.5 % SOC (the SP1 charge branch stopped near 4.15 V). The drive-cycle validation scored only drive-cycle steps, so it did not see this.
+**Not fixed yet.** Candidate fixes (calibrate on DST, select on FUDS, never on the test files): an OCV top segment from SP2/SP3 data that reaches 4.2 V,
+or SOC-dependent hysteresis. Any fix needs a new validation run.
+
+Other US06 80 % monitor output: undervoltage WARNING (min simulated 2.768 V; measured run ends at 2.498 V), low-SOC WARNING; temperature NOT MONITORED (none logged).
+
+## Limits used (bp_limits_liion.m)
+Every limit records its source. 4.20 / 2.50 V come from the CALCE test procedure. 4 A / 2.2 A are the validated data envelope (WARNING only; datasheet maxima UNVERIFIED).
+Temperature and dT/dt limits are ASSUMED. The thermal model is PROVISIONAL: C_th = 45 g (CALCE) x 1000 J/kg/K (assumed cp), R_th = 10 K/W (assumed).
+
+## Not done yet
+- This monitor is offline (post-simulation). Predictive real-time moderation (requested vs permitted current) is Phase 13.
+- dV/dt and dI/dt are reported, not used as limits (on their own they do not indicate damage).
+</pre><h2>platform_results.md</h2><pre style='white-space:pre-wrap'># Platform results (2026-11-12, overnight run)
+
+## Tested (backend: 53/53 pytest passing, rerun 2026-11-12 after the n8n fixes)
+- Python engine is equivalent to MATLAB v2: OCV table within 2 µV; test RMSE within 0.02 mV on US06/BJDST.
+- Generators: the pulse value is the total current; ripple RMS is exact; dt is auto-reduced to &lt;= 1/(20 f) when ripple is enabled.
+- Predictive moderator (backend, not n8n): spec example base 2 A / pulse 4 A at 1.5 % SOC -&gt; permitted 3.965 A; logged.
+- Closed-loop auto moderation removes CRITICAL undervoltage.
+- EKF on MEASURED CALCE test cycles, started 30 % SOC off: 0.76-1.94 % RMS after 10 min. With +50 mA sensor bias: end drift 0.08-0.40 % (coulomb counting: 4.6-7.5 %).
+- Adaptive charging 20-&gt;80 %: 30 min INFEASIBLE (needs 2.48 A &gt; 2.2 A validated cap; fastest is 33.8 min); 45 min feasible.
+- Pack balancing (SIMULATED, 4S, 12 % SOC spread): passive -&gt; 0.25 % (1.70 Wh burned); active -&gt; 1.0 % (0.065 Wh).
+- ML (experimental): SOC regressor test RMSE 6.9 % -&gt; REJECTED by rule (EKF is better). Panasonic screen: 5/92 cells flagged (unsupervised, no accuracy claimed).
+- Learning loop:
+  - Error analysis (FUDS): weak region 0-10 % SOC (20.1 mV), +13.7 mV bias at 50-80 % SOC.
+  - Candidates v3 (no gain), v4 (overfit, at bounds) and v5 (unsupported knots) were REJECTED.
+  - v6 (v2 dynamics + OCV correction fitted on DST only, data-supported knots, bounded by the measured cell-to-cell spread) was APPROVED: val 8.82 vs 11.41 mV; test US06 14.12/15.26, BJDST 12.13/14.45 mV (v2: 15.36/16.87/14.76/15.92).
+- Dashboard: 14 pages verified in the browser (experiment run, live charts, adaptive charging, validation overlay, EKF).
+- n8n: 11 workflow JSONs; static checks pass (routes, error branches, retries, no credentials).
+
+## Open
+- Nothing open in software. Data limits remain: Ni-Cd and thermal stay PROVISIONAL until real measurements exist.
+
+## Closed since
+- n8n: all 11 workflows imported into n8n 2.42.6 (Docker), activated and triggered via webhook: 15/15 live checks PASS
+  (`n8n/run_webhooks.py`, record in `docs/N8N.md`). The live run found 2 generator bugs (stray `}}` in expressions; respond
+  after an IF false branch), now fixed and covered by the static test.
+- v6 Simulink equivalence: after fixing the generator&#x27;s line-break bug, RUN_V6_SIMULINK_CHECK.m passes. Simulink test RMSE is
+  14.123 / 15.266 / 12.132 / 14.451 mV against Python 14.122 / 15.260 / 12.132 / 14.451 mV (max difference 0.0062 mV).
+- Ni-Cd: PROVISIONAL only (no real data). Thermal: PROVISIONAL (no temperature data).
+</pre></body></html>

@@ -1,0 +1,942 @@
+{
+  "task": "panasonic_anomaly_screen",
+  "algorithm": "IsolationForest",
+  "contamination": 0.05,
+  "features": [
+    "ocv50_chg",
+    "ocv50_dis",
+    "hyst50_mV",
+    "positive_jump_on_mV",
+    "positive_relax60_mV",
+    "positive_relax1800_mV",
+    "negative_jump_on_mV",
+    "negative_relax60_mV",
+    "negative_relax1800_mV"
+  ],
+  "n_cells": 92,
+  "n_flagged": 5,
+  "ranking": [
+    {
+      "cell": 75,
+      "anomaly_score": 0.6148185816974983,
+      "flagged": true,
+      "most_unusual": {
+        "positive_relax60_mV": -2.33,
+        "positive_relax1800_mV": -2.31,
+        "hyst50_mV": 2.29
+      }
+    },
+    {
+      "cell": 85,
+      "anomaly_score": 0.6019410738413487,
+      "flagged": true,
+      "most_unusual": {
+        "negative_relax60_mV": 2.67,
+        "hyst50_mV": 2.67,
+        "ocv50_chg": 2.61
+      }
+    },
+    {
+      "cell": 72,
+      "anomaly_score": 0.6014384678989595,
+      "flagged": true,
+      "most_unusual": {
+        "negative_relax60_mV": -2.66,
+        "negative_relax1800_mV": -2.65,
+        "hyst50_mV": -1.89
+      }
+    },
+    {
+      "cell": 65,
+      "anomaly_score": 0.5789357848828139,
+      "flagged": true,
+      "most_unusual": {
+        "ocv50_dis": 2.7,
+        "ocv50_chg": 2.27,
+        "negative_relax1800_mV": -1.73
+      }
+    },
+    {
+      "cell": 64,
+      "anomaly_score": 0.5786837935429308,
+      "flagged": true,
+      "most_unusual": {
+        "negative_relax60_mV": -2.58,
+        "positive_relax60_mV": 2.34,
+        "negative_relax1800_mV": -2.01
+      }
+    },
+    {
+      "cell": 90,
+      "anomaly_score": 0.5772100578656648,
+      "flagged": false,
+      "most_unusual": {
+        "positive_relax60_mV": -2.57,
+        "positive_relax1800_mV": -2.42,
+        "negative_jump_on_mV": -1.71
+      }
+    },
+    {
+      "cell": 71,
+      "anomaly_score": 0.5606229201362329,
+      "flagged": false,
+      "most_unusual": {
+        "ocv50_chg": 2.57,
+        "negative_relax1800_mV": -1.91,
+        "hyst50_mV": 1.85
+      }
+    },
+    {
+      "cell": 77,
+      "anomaly_score": 0.5575737535808121,
+      "flagged": false,
+      "most_unusual": {
+        "ocv50_dis": 3.32,
+        "ocv50_chg": 2.01,
+        "positive_relax1800_mV": -1.39
+      }
+    },
+    {
+      "cell": 29,
+      "anomaly_score": 0.5543142518955734,
+      "flagged": false,
+      "most_unusual": {
+        "negative_jump_on_mV": -3.95,
+        "positive_jump_on_mV": 3.85,
+        "hyst50_mV": 1.8
+      }
+    },
+    {
+      "cell": 57,
+      "anomaly_score": 0.5497996640165735,
+      "flagged": false,
+      "most_unusual": {
+        "positive_relax60_mV": 2.38,
+        "negative_relax1800_mV": -2.38,
+        "negative_relax60_mV": -2.08
+      }
+    },
+    {
+      "cell": 74,
+      "anomaly_score": 0.5328960173271458,
+      "flagged": false,
+      "most_unusual": {
+        "ocv50_chg": -1.93,
+        "ocv50_dis": -1.84,
+        "positive_relax60_mV": -1.53
+      }
+    },
+    {
+      "cell": 73,
+      "anomaly_score": 0.5302218222400035,
+      "flagged": false,
+      "most_unusual": {
+        "negative_relax1800_mV": -2.55,
+        "ocv50_dis": 1.67,
+        "positive_relax1800_mV": 1.66
+      }
+    },
+    {
+      "cell": 27,
+      "anomaly_score": 0.5240255248356296,
+      "flagged": false,
+      "most_unusual": {
+        "ocv50_chg": -1.93,
+        "hyst50_mV": -1.62,
+        "positive_jump_on_mV": -1.48
+      }
+    },
+    {
+      "cell": 10,
+      "anomaly_score": 0.512095068931829,
+      "flagged": false,
+      "most_unusual": {
+        "ocv50_chg": -1.72,
+        "positive_relax60_mV": 1.69,
+        "ocv50_dis": -1.43
+      }
+    },
+    {
+      "cell": 46,
+      "anomaly_score": 0.503987299686691,
+      "flagged": false,
+      "most_unusual": {
+        "negative_jump_on_mV": -2.02,
+        "positive_jump_on_mV": 2.01,
+        "negative_relax1800_mV": 1.36
+      }
+    },
+    {
+      "cell": 25,
+      "anomaly_score": 0.5031940324437152,
+      "flagged": false,
+      "most_unusual": {
+        "positive_jump_on_mV": 2.49,
+        "negative_jump_on_mV": -2.49,
+        "ocv50_dis": -1.57
+      }
+    },
+    {
+      "cell": 20,
+      "anomaly_score": 0.5019353123976443,
+      "flagged": false,
+      "most_unusual": {
+        "hyst50_mV": -2.16,
+        "ocv50_chg": -1.47,
+        "negative_jump_on_mV": 1.18
+      }
+    },
+    {
+      "cell": 56,
+      "anomaly_score": 0.4967091142799414,
+      "flagged": false,
+      "most_unusual": {
+        "positive_relax1800_mV": 2.1,
+        "negative_relax1800_mV": -2.07,
+        "positive_relax60_mV": 2.06
+      }
+    },
+    {
+      "cell": 69,
+      "anomaly_score": 0.4963259142729373,
+      "flagged": false,
+      "most_unusual": {
+        "positive_relax60_mV": 1.97,
+        "positive_relax1800_mV": 1.82,
+        "negative_relax1800_mV": -1.4
+      }
+    },
+    {
+      "cell": 54,
+      "anomaly_score": 0.4931145817394359,
+      "flagged": false,
+      "most_unusual": {
+        "ocv50_chg": 1.59,
+        "ocv50_dis": 1.19,
+        "hyst50_mV": 1.09
+      }
+    },
+    {
+      "cell": 58,
+      "anomaly_score": 0.4847594027843466,
+      "flagged": false,
+      "most_unusual": {
+        "positive_jump_on_mV": 2.64,
+        "negative_jump_on_mV": -2.56,
+        "positive_relax1800_mV": -0.63
+      }
+    },
+    {
+      "cell": 5,
+      "anomaly_score": 0.48213027098625616,
+      "flagged": false,
+      "most_unusual": {
+        "ocv50_dis": 1.33,
+        "positive_relax60_mV": 1.31,
+        "negative_jump_on_mV": 1.09
+      }
+    },
+    {
+      "cell": 34,
+      "anomaly_score": 0.4798248547909596,
+      "flagged": false,
+      "most_unusual": {
+        "ocv50_chg": -1.81,
+        "hyst50_mV": -1.73,
+        "positive_jump_on_mV": -0.99
+      }
+    },
+    {
+      "cell": 31,
+      "anomaly_score": 0.47429454788861125,
+      "flagged": false,
+      "most_unusual": {
+        "ocv50_chg": -1.55,
+        "ocv50_dis": -1.36,
+        "negative_relax1800_mV": -1.1
+      }
+    },
+    {
+      "cell": 67,
+      "anomaly_score": 0.47358226475994325,
+      "flagged": false,
+      "most_unusual": {
+        "ocv50_chg": -1.64,
+        "hyst50_mV": -1.4,
+        "positive_relax1800_mV": 1.23
+      }
+    },
+    {
+      "cell": 78,
+      "anomaly_score": 0.47178990955069516,
+      "flagged": false,
+      "most_unusual": {
+        "ocv50_dis": 2.08,
+        "ocv50_chg": 1.38,
+        "negative_relax1800_mV": 1.01
+      }
+    },
+    {
+      "cell": 48,
+      "anomaly_score": 0.4699035425064859,
+      "flagged": false,
+      "most_unusual": {
+        "positive_relax60_mV": -1.4,
+        "positive_relax1800_mV": -1.3,
+        "positive_jump_on_mV": -1.19
+      }
+    },
+    {
+      "cell": 43,
+      "anomaly_score": 0.4698726223714512,
+      "flagged": false,
+      "most_unusual": {
+        "hyst50_mV": -1.51,
+        "positive_relax1800_mV": -1.34,
+        "negative_relax1800_mV": 1.25
+      }
+    },
+    {
+      "cell": 70,
+      "anomaly_score": 0.46974181863555936,
+      "flagged": false,
+      "most_unusual": {
+        "negative_relax1800_mV": -2.0,
+        "negative_relax60_mV": -1.39,
+        "positive_relax1800_mV": 1.03
+      }
+    },
+    {
+      "cell": 63,
+      "anomaly_score": 0.4696910465398069,
+      "flagged": false,
+      "most_unusual": {
+        "hyst50_mV": -1.51,
+        "negative_relax1800_mV": -1.39,
+        "positive_jump_on_mV": -1.28
+      }
+    },
+    {
+      "cell": 50,
+      "anomaly_score": 0.4686978555265416,
+      "flagged": false,
+      "most_unusual": {
+        "positive_relax60_mV": -1.83,
+        "positive_relax1800_mV": -1.82,
+        "negative_relax60_mV": 1.54
+      }
+    },
+    {
+      "cell": 47,
+      "anomaly_score": 0.4681371776229381,
+      "flagged": false,
+      "most_unusual": {
+        "ocv50_dis": 2.08,
+        "ocv50_chg": 1.21,
+        "positive_relax1800_mV": -0.93
+      }
+    },
+    {
+      "cell": 3,
+      "anomaly_score": 0.46509284422871877,
+      "flagged": false,
+      "most_unusual": {
+        "positive_relax60_mV": 1.9,
+        "positive_relax1800_mV": 1.81,
+        "negative_relax60_mV": -1.05
+      }
+    },
+    {
+      "cell": 15,
+      "anomaly_score": 0.4646523440359703,
+      "flagged": false,
+      "most_unusual": {
+        "positive_relax1800_mV": -1.45,
+        "negative_relax1800_mV": 1.42,
+        "negative_relax60_mV": 1.4
+      }
+    },
+    {
+      "cell": 89,
+      "anomaly_score": 0.46408304729920447,
+      "flagged": false,
+      "most_unusual": {
+        "hyst50_mV": -1.24,
+        "positive_relax1800_mV": -1.16,
+        "positive_jump_on_mV": -1.08
+      }
+    },
+    {
+      "cell": 36,
+      "anomaly_score": 0.46001696406578607,
+      "flagged": false,
+      "most_unusual": {
+        "negative_jump_on_mV": -0.99,
+        "positive_jump_on_mV": 0.95,
+        "negative_relax60_mV": -0.9
+      }
+    },
+    {
+      "cell": 53,
+      "anomaly_score": 0.4589729217895034,
+      "flagged": false,
+      "most_unusual": {
+        "positive_relax60_mV": -1.79,
+        "positive_jump_on_mV": 1.29,
+        "negative_jump_on_mV": -1.26
+      }
+    },
+    {
+      "cell": 41,
+      "anomaly_score": 0.45730183067896685,
+      "flagged": false,
+      "most_unusual": {
+        "hyst50_mV": -1.78,
+        "ocv50_chg": -1.51,
+        "positive_relax1800_mV": -0.77
+      }
+    },
+    {
+      "cell": 51,
+      "anomaly_score": 0.4560658002364431,
+      "flagged": false,
+      "most_unusual": {
+        "ocv50_dis": 1.53,
+        "negative_relax60_mV": -0.93,
+        "negative_relax1800_mV": -0.78
+      }
+    },
+    {
+      "cell": 28,
+      "anomaly_score": 0.4521776784155396,
+      "flagged": false,
+      "most_unusual": {
+        "negative_relax1800_mV": -1.54,
+        "negative_relax60_mV": -1.48,
+        "positive_relax60_mV": 1.0
+      }
+    },
+    {
+      "cell": 24,
+      "anomaly_score": 0.452157776953392,
+      "flagged": false,
+      "most_unusual": {
+        "negative_relax60_mV": -1.19,
+        "positive_relax60_mV": 1.07,
+        "negative_relax1800_mV": -0.77
+      }
+    },
+    {
+      "cell": 7,
+      "anomaly_score": 0.45173866596830375,
+      "flagged": false,
+      "most_unusual": {
+        "hyst50_mV": 1.69,
+        "ocv50_dis": -1.36,
+        "negative_relax60_mV": 1.1
+      }
+    },
+    {
+      "cell": 79,
+      "anomaly_score": 0.45001290421093165,
+      "flagged": false,
+      "most_unusual": {
+        "hyst50_mV": 1.31,
+        "ocv50_chg": 1.25,
+        "negative_relax60_mV": 1.09
+      }
+    },
+    {
+      "cell": 2,
+      "anomaly_score": 0.4492438854074257,
+      "flagged": false,
+      "most_unusual": {
+        "positive_relax60_mV": 1.31,
+        "positive_relax1800_mV": 1.21,
+        "negative_relax60_mV": -0.86
+      }
+    },
+    {
+      "cell": 6,
+      "anomaly_score": 0.4486063774105513,
+      "flagged": false,
+      "most_unusual": {
+        "positive_relax1800_mV": 1.11,
+        "ocv50_chg": -1.08,
+        "hyst50_mV": -0.97
+      }
+    },
+    {
+      "cell": 62,
+      "anomaly_score": 0.4485509492783921,
+      "flagged": false,
+      "most_unusual": {
+        "positive_relax60_mV": 1.53,
+        "positive_relax1800_mV": 1.21,
+        "negative_relax1800_mV": -1.08
+      }
+    },
+    {
+      "cell": 8,
+      "anomaly_score": 0.4484341781211173,
+      "flagged": false,
+      "most_unusual": {
+        "negative_jump_on_mV": -1.56,
+        "positive_jump_on_mV": 1.55,
+        "negative_relax1800_mV": 1.1
+      }
+    },
+    {
+      "cell": 13,
+      "anomaly_score": 0.44818658113138693,
+      "flagged": false,
+      "most_unusual": {
+        "positive_relax1800_mV": -1.39,
+        "negative_relax60_mV": 1.35,
+        "ocv50_chg": 1.16
+      }
+    },
+    {
+      "cell": 18,
+      "anomaly_score": 0.44760545678048635,
+      "flagged": false,
+      "most_unusual": {
+        "negative_relax60_mV": -1.36,
+        "ocv50_chg": -1.13,
+        "negative_relax1800_mV": -1.08
+      }
+    },
+    {
+      "cell": 86,
+      "anomaly_score": 0.44272422804745765,
+      "flagged": false,
+      "most_unusual": {
+        "positive_jump_on_mV": 1.35,
+        "negative_jump_on_mV": -1.29,
+        "positive_relax1800_mV": -1.24
+      }
+    },
+    {
+      "cell": 68,
+      "anomaly_score": 0.44252780729160957,
+      "flagged": false,
+      "most_unusual": {
+        "hyst50_mV": 1.58,
+        "negative_relax60_mV": 1.56,
+        "ocv50_dis": -1.5
+      }
+    },
+    {
+      "cell": 32,
+      "anomaly_score": 0.44067072649241507,
+      "flagged": false,
+      "most_unusual": {
+        "ocv50_chg": -1.38,
+        "ocv50_dis": -1.08,
+        "negative_relax1800_mV": 1.04
+      }
+    },
+    {
+      "cell": 40,
+      "anomaly_score": 0.4404100335757164,
+      "flagged": false,
+      "most_unusual": {
+        "ocv50_dis": -1.5,
+        "positive_relax1800_mV": -1.21,
+        "positive_jump_on_mV": 1.01
+      }
+    },
+    {
+      "cell": 80,
+      "anomaly_score": 0.43995325224568155,
+      "flagged": false,
+      "most_unusual": {
+        "negative_jump_on_mV": 1.19,
+        "positive_jump_on_mV": -1.08,
+        "positive_relax1800_mV": 1.02
+      }
+    },
+    {
+      "cell": 61,
+      "anomaly_score": 0.4396296706127234,
+      "flagged": false,
+      "most_unusual": {
+        "hyst50_mV": -1.56,
+        "negative_jump_on_mV": 0.9,
+        "positive_jump_on_mV": -0.89
+      }
+    },
+    {
+      "cell": 11,
+      "anomaly_score": 0.4393847243348003,
+      "flagged": false,
+      "most_unusual": {
+        "hyst50_mV": 1.58,
+        "ocv50_dis": -1.57,
+        "negative_relax60_mV": 1.04
+      }
+    },
+    {
+      "cell": 55,
+      "anomaly_score": 0.4382938295638974,
+      "flagged": false,
+      "most_unusual": {
+        "negative_relax1800_mV": -1.11,
+        "negative_jump_on_mV": -0.8,
+        "positive_jump_on_mV": 0.76
+      }
+    },
+    {
+      "cell": 76,
+      "anomaly_score": 0.43625888846127986,
+      "flagged": false,
+      "most_unusual": {
+        "positive_relax1800_mV": -1.37,
+        "positive_relax60_mV": -1.36,
+        "ocv50_chg": -0.75
+      }
+    },
+    {
+      "cell": 12,
+      "anomaly_score": 0.43610621667238547,
+      "flagged": false,
+      "most_unusual": {
+        "negative_jump_on_mV": 1.26,
+        "positive_jump_on_mV": -1.2,
+        "hyst50_mV": -1.02
+      }
+    },
+    {
+      "cell": 23,
+      "anomaly_score": 0.4357640009318711,
+      "flagged": false,
+      "most_unusual": {
+        "ocv50_dis": -1.01,
+        "ocv50_chg": -0.87,
+        "negative_relax60_mV": -0.75
+      }
+    },
+    {
+      "cell": 88,
+      "anomaly_score": 0.43463325815477805,
+      "flagged": false,
+      "most_unusual": {
+        "ocv50_chg": -1.42,
+        "ocv50_dis": -1.22,
+        "hyst50_mV": -0.86
+      }
+    },
+    {
+      "cell": 49,
+      "anomaly_score": 0.4284652539392209,
+      "flagged": false,
+      "most_unusual": {
+        "negative_relax60_mV": 1.54,
+        "positive_relax60_mV": -0.95,
+        "negative_relax1800_mV": 0.92
+      }
+    },
+    {
+      "cell": 22,
+      "anomaly_score": 0.42753235530633243,
+      "flagged": false,
+      "most_unusual": {
+        "hyst50_mV": 1.2,
+        "ocv50_dis": -1.15,
+        "negative_relax1800_mV": -0.45
+      }
+    },
+    {
+      "cell": 91,
+      "anomaly_score": 0.42750216266658153,
+      "flagged": false,
+      "most_unusual": {
+        "positive_jump_on_mV": 1.39,
+        "negative_jump_on_mV": -1.28,
+        "positive_relax60_mV": -0.89
+      }
+    },
+    {
+      "cell": 37,
+      "anomaly_score": 0.42664419548470706,
+      "flagged": false,
+      "most_unusual": {
+        "hyst50_mV": -1.62,
+        "ocv50_chg": -0.83,
+        "ocv50_dis": 0.71
+      }
+    },
+    {
+      "cell": 42,
+      "anomaly_score": 0.4245246150803217,
+      "flagged": false,
+      "most_unusual": {
+        "positive_jump_on_mV": 1.25,
+        "negative_jump_on_mV": -1.25,
+        "positive_relax60_mV": 0.4
+      }
+    },
+    {
+      "cell": 14,
+      "anomaly_score": 0.4241746268580974,
+      "flagged": false,
+      "most_unusual": {
+        "negative_jump_on_mV": 1.06,
+        "negative_relax1800_mV": -0.98,
+        "positive_jump_on_mV": -0.96
+      }
+    },
+    {
+      "cell": 9,
+      "anomaly_score": 0.42289152448101314,
+      "flagged": false,
+      "most_unusual": {
+        "hyst50_mV": 1.2,
+        "negative_relax1800_mV": 1.15,
+        "negative_relax60_mV": 1.06
+      }
+    },
+    {
+      "cell": 81,
+      "anomaly_score": 0.42274740943696837,
+      "flagged": false,
+      "most_unusual": {
+        "positive_relax1800_mV": 1.13,
+        "positive_relax60_mV": 1.08,
+        "negative_relax60_mV": -1.03
+      }
+    },
+    {
+      "cell": 45,
+      "anomaly_score": 0.41691877888529627,
+      "flagged": false,
+      "most_unusual": {
+        "hyst50_mV": -1.29,
+        "ocv50_chg": -0.91,
+        "positive_relax60_mV": -0.66
+      }
+    },
+    {
+      "cell": 44,
+      "anomaly_score": 0.4160285808822502,
+      "flagged": false,
+      "most_unusual": {
+        "negative_relax60_mV": 1.25,
+        "positive_relax60_mV": -1.21,
+        "positive_relax1800_mV": -1.17
+      }
+    },
+    {
+      "cell": 83,
+      "anomaly_score": 0.416025973677623,
+      "flagged": false,
+      "most_unusual": {
+        "hyst50_mV": 1.09,
+        "ocv50_chg": 0.87,
+        "negative_relax60_mV": 0.5
+      }
+    },
+    {
+      "cell": 92,
+      "anomaly_score": 0.4145152377123078,
+      "flagged": false,
+      "most_unusual": {
+        "positive_relax1800_mV": -1.37,
+        "positive_relax60_mV": -0.88,
+        "positive_jump_on_mV": -0.87
+      }
+    },
+    {
+      "cell": 26,
+      "anomaly_score": 0.41165776535407533,
+      "flagged": false,
+      "most_unusual": {
+        "positive_relax60_mV": 0.67,
+        "negative_relax1800_mV": -0.61,
+        "negative_relax60_mV": -0.57
+      }
+    },
+    {
+      "cell": 39,
+      "anomaly_score": 0.40929037288555786,
+      "flagged": false,
+      "most_unusual": {
+        "negative_jump_on_mV": 1.13,
+        "positive_jump_on_mV": -1.07,
+        "ocv50_dis": -0.6
+      }
+    },
+    {
+      "cell": 82,
+      "anomaly_score": 0.40862322824162783,
+      "flagged": false,
+      "most_unusual": {
+        "negative_relax60_mV": 1.46,
+        "negative_relax1800_mV": 0.95,
+        "positive_relax60_mV": -0.93
+      }
+    },
+    {
+      "cell": 1,
+      "anomaly_score": 0.406357521221069,
+      "flagged": false,
+      "most_unusual": {
+        "negative_relax60_mV": 1.32,
+        "ocv50_dis": -1.22,
+        "negative_relax1800_mV": 1.02
+      }
+    },
+    {
+      "cell": 33,
+      "anomaly_score": 0.4043058027421259,
+      "flagged": false,
+      "most_unusual": {
+        "ocv50_dis": 1.05,
+        "positive_jump_on_mV": -0.71,
+        "negative_jump_on_mV": 0.71
+      }
+    },
+    {
+      "cell": 60,
+      "anomaly_score": 0.4000840197135426,
+      "flagged": false,
+      "most_unusual": {
+        "positive_jump_on_mV": -0.87,
+        "negative_jump_on_mV": 0.82,
+        "ocv50_chg": 0.4
+      }
+    },
+    {
+      "cell": 87,
+      "anomaly_score": 0.3982200120870936,
+      "flagged": false,
+      "most_unusual": {
+        "ocv50_chg": 0.66,
+        "ocv50_dis": 0.57,
+        "hyst50_mV": 0.39
+      }
+    },
+    {
+      "cell": 21,
+      "anomaly_score": 0.39517585141127565,
+      "flagged": false,
+      "most_unusual": {
+        "negative_jump_on_mV": -0.86,
+        "positive_jump_on_mV": 0.83,
+        "ocv50_dis": -0.81
+      }
+    },
+    {
+      "cell": 59,
+      "anomaly_score": 0.3950093892540546,
+      "flagged": false,
+      "most_unusual": {
+        "ocv50_dis": -1.01,
+        "negative_relax60_mV": 0.87,
+        "hyst50_mV": 0.71
+      }
+    },
+    {
+      "cell": 38,
+      "anomaly_score": 0.3949266533020632,
+      "flagged": false,
+      "most_unusual": {
+        "positive_relax1800_mV": -0.61,
+        "hyst50_mV": 0.44,
+        "ocv50_chg": 0.44
+      }
+    },
+    {
+      "cell": 52,
+      "anomaly_score": 0.3946395599156001,
+      "flagged": false,
+      "most_unusual": {
+        "ocv50_chg": -0.91,
+        "positive_relax1800_mV": -0.8,
+        "hyst50_mV": -0.69
+      }
+    },
+    {
+      "cell": 19,
+      "anomaly_score": 0.39461025572511005,
+      "flagged": false,
+      "most_unusual": {
+        "positive_jump_on_mV": -0.81,
+        "negative_jump_on_mV": 0.78,
+        "positive_relax60_mV": -0.57
+      }
+    },
+    {
+      "cell": 35,
+      "anomaly_score": 0.3930072980245523,
+      "flagged": false,
+      "most_unusual": {
+        "negative_relax60_mV": 0.86,
+        "hyst50_mV": 0.82,
+        "ocv50_dis": -0.67
+      }
+    },
+    {
+      "cell": 30,
+      "anomaly_score": 0.39274176689901436,
+      "flagged": false,
+      "most_unusual": {
+        "positive_relax60_mV": -0.75,
+        "negative_jump_on_mV": 0.66,
+        "negative_relax60_mV": 0.47
+      }
+    },
+    {
+      "cell": 4,
+      "anomaly_score": 0.3912335992703239,
+      "flagged": false,
+      "most_unusual": {
+        "positive_jump_on_mV": 0.98,
+        "negative_jump_on_mV": -0.97,
+        "negative_relax1800_mV": 0.79
+      }
+    },
+    {
+      "cell": 66,
+      "anomaly_score": 0.3904440180274699,
+      "flagged": false,
+      "most_unusual": {
+        "ocv50_dis": -1.22,
+        "negative_relax60_mV": 0.57,
+        "positive_jump_on_mV": 0.55
+      }
+    },
+    {
+      "cell": 16,
+      "anomaly_score": 0.38994224883163403,
+      "flagged": false,
+      "most_unusual": {
+        "hyst50_mV": 0.66,
+        "ocv50_chg": 0.57,
+        "negative_relax60_mV": 0.45
+      }
+    },
+    {
+      "cell": 84,
+      "anomaly_score": 0.3781920505714167,
+      "flagged": false,
+      "most_unusual": {
+        "ocv50_dis": -1.08,
+        "hyst50_mV": 0.5,
+        "negative_relax60_mV": 0.43
+      }
+    },
+    {
+      "cell": 17,
+      "anomaly_score": 0.3780499858957087,
+      "flagged": false,
+      "most_unusual": {
+        "positive_jump_on_mV": 0.73,
+        "negative_jump_on_mV": -0.66,
+        "hyst50_mV": 0.5
+      }
+    }
+  ],
+  "data": "MEASURED: Panasonic NCR18650B consolidated file (92 cells)",
+  "note": "Unsupervised screen: flags statistical outliers, not confirmed faults. No accuracy claimed."
+}

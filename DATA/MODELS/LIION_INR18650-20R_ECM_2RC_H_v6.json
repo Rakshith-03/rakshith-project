@@ -1,0 +1,79 @@
+{
+  "id": "LIION_INR18650-20R_ECM_2RC_H_v6",
+  "version": 6,
+  "chemistry": "Li-ion NMC (LiNiMnCo/graphite per CALCE data page)",
+  "cell": "INR18650-20R, 2000 mAh rated (CALCE); manufacturer UNVERIFIED",
+  "approval": "APPROVED - candidate better on validation, plausible, within test limit; val RMSE 8.818 mV vs approved 11.410 mV",
+  "status": "VALIDATED",
+  "source_run": "python recalibration",
+  "params": {
+    "R0_ohm": 0.0738506311404,
+    "Q_Ah": 2.06689334569,
+    "R1_ohm": 0.00881936844205,
+    "tau1_s": 8.67716764765,
+    "R2_ohm": 0.0167212557577,
+    "tau2_s": 67.2618503875,
+    "M_V": 0.0214277662977,
+    "gamma": 22.6461273818
+  },
+  "ocv": {
+    "source": "SP1 C/20 pseudo-OCV (CALCE file 11_5_2015_low current OCV test_SP20-1.xlsx), top anchored to measured 2 h rest after CV",
+    "V_rest_full": 4.183,
+    "z_end": 0.89,
+    "gap_end": 0.0655,
+    "note": "matlab_checkpoints are the v2 BASE table (inherited); the v6 table = base + ocv_delta",
+    "matlab_checkpoints": {
+      "0.0": 2.747,
+      "0.125": 3.4835,
+      "0.25": 3.586,
+      "0.5": 3.677568,
+      "0.75": 3.916,
+      "0.89": 4.0825,
+      "0.895": 4.084912,
+      "0.945": 4.111036,
+      "1.0": 4.161572
+    }
+  },
+  "validity_envelope": "25 C; discharge 0-4 A; charge 0-2.2 A; accuracy degrades below 10 % SOC (27-42 mV RMSE)",
+  "thermal": "PROVISIONAL: C_th = 45 J/K (45 g CALCE spec x 1000 J/kg/K ASSUMED), R_th = 10 K/W ASSUMED",
+  "parent": "LIION_INR18650-20R_ECM_2RC_H_v2",
+  "structure": "ocv_delta_only",
+  "ocv_delta": {
+    "knots": [
+      0.0,
+      0.1,
+      0.2,
+      0.35,
+      0.5,
+      0.65,
+      0.8,
+      0.9,
+      1.0
+    ],
+    "values_V": [
+      -9.999999999999999e-10,
+      0.002814467768970078,
+      0.006739527153134183,
+      0.005408741620731615,
+      0.006259105807391242,
+      -0.02647103986615184,
+      -0.011081340999793274,
+      7.262880643198482e-10,
+      0.0
+    ],
+    "note": "fitted on TRAIN files only (SP2 DST); corrects SP1-vs-SP2 OCV mismatch; knots without training coverage held at 0"
+  },
+  "calibration": "python least_squares on SP2 DST 50/80 % (train only)",
+  "simulink_equivalence": "EQUIVALENT (MATLAB Online, RUN_V6_SIMULINK_CHECK.m, 2026-11-12): Simulink test RMSE US06 50/80 14.123/15.266, BJDST 50/80 12.132/14.451 mV; max |Simulink - Python| 0.0062 mV",
+  "validation_rmse_mV": {
+    "FUDS_50SOC": 9.102560422457831,
+    "FUDS_80SOC": 8.533758701087157
+  },
+  "test_rmse_mV": {
+    "US06_50SOC": 14.12192683015326,
+    "US06_80SOC": 15.259781262294686,
+    "BJDST_50SOC": 12.132166122329243,
+    "BJDST_80SOC": 14.451178684795677
+  },
+  "created_at": "2026-11-12 03:28:50"
+}

@@ -1,0 +1,46 @@
+{
+  "id": "LIION_INR18650-20R_ECM_2RC_H_v3",
+  "version": 3,
+  "chemistry": "Li-ion NMC (LiNiMnCo/graphite per CALCE data page)",
+  "cell": "INR18650-20R, 2000 mAh rated (CALCE); manufacturer UNVERIFIED",
+  "approval": "REJECTED - not better on validation data; val RMSE 11.409 mV vs approved 11.410 mV",
+  "status": "NOT APPROVED",
+  "source_run": "python recalibration",
+  "params": {
+    "R0_ohm": 0.07383686004874629,
+    "Q_Ah": 2.0668896217177295,
+    "R1_ohm": 0.008722474205805976,
+    "tau1_s": 8.528573293777134,
+    "R2_ohm": 0.01677643668743003,
+    "tau2_s": 66.39148543749066,
+    "M_V": 0.021456652857658017,
+    "gamma": 22.467262590472284
+  },
+  "ocv": {
+    "source": "SP1 C/20 pseudo-OCV (CALCE file 11_5_2015_low current OCV test_SP20-1.xlsx), top anchored to measured 2 h rest after CV",
+    "V_rest_full": 4.183,
+    "z_end": 0.89,
+    "gap_end": 0.0655,
+    "matlab_checkpoints": {
+      "0.0": 2.747,
+      "0.125": 3.4835,
+      "0.25": 3.586,
+      "0.5": 3.677568,
+      "0.75": 3.916,
+      "0.89": 4.0825,
+      "0.895": 4.084912,
+      "0.945": 4.111036,
+      "1.0": 4.161572
+    }
+  },
+  "validity_envelope": "25 C; discharge 0-4 A; charge 0-2.2 A; accuracy degrades below 10 % SOC (27-42 mV RMSE)",
+  "thermal": "PROVISIONAL: C_th = 45 J/K (45 g CALCE spec x 1000 J/kg/K ASSUMED), R_th = 10 K/W ASSUMED",
+  "parent": "LIION_INR18650-20R_ECM_2RC_H_v2",
+  "calibration": "python least_squares on SP2 DST 50/80 % (train only)",
+  "validation_rmse_mV": {
+    "FUDS_50SOC": 10.081397544865991,
+    "FUDS_80SOC": 12.73716546896766
+  },
+  "test_rmse_mV": null,
+  "created_at": "2026-11-12 03:21:21"
+}

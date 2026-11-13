@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Battery BMS Lab</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#1d2330;--mut:#5d6677;--line:#dde1e7;--acc:#2563eb;--ok:#15803d;--warn:#b45309;--crit:#b91c1c}
+@media (prefers-color-scheme:dark){:root{--bg:#11151c;--card:#1a202a;--ink:#e6e9ef;--mut:#9aa4b5;--line:#2c3542;--acc:#60a5fa;--ok:#4ade80;--warn:#fbbf24;--crit:#f87171}}
+*{box-sizing:border-box}body{margin:0;font:14px/1.45 system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+header{display:flex;gap:12px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--card);flex-wrap:wrap}
+header b{font-size:15px}#status{color:var(--mut);font-size:12px}
+nav{display:flex;flex-wrap:wrap;gap:4px;padding:8px 16px;background:var(--card);border-bottom:1px solid var(--line)}
+nav button{border:1px solid var(--line);background:none;color:var(--ink);padding:5px 9px;border-radius:6px;cursor:pointer;font-size:13px}
+nav button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+main{padding:16px;max-width:1300px;margin:auto}section{display:none}section.on{display:block}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px;overflow:auto}
+.card h3{margin:0 0 8px;font-size:14px}.kpi{font-size:22px;font-weight:600}.mut{color:var(--mut);font-size:12px}
+label{display:flex;justify-content:space-between;gap:8px;margin:3px 0;font-size:13px}input,select{width:130px;padding:3px 5px;border:1px solid var(--line);border-radius:5px;background:var(--bg);color:var(--ink)}
+input[type=checkbox]{width:auto}button.act{background:var(--acc);color:#fff;border:0;border-radius:6px;padding:6px 12px;cursor:pointer;margin:4px 4px 0 0}
+table{border-collapse:collapse;width:100%;font-size:12.5px}th,td{border-bottom:1px solid var(--line);padding:4px 6px;text-align:left;vertical-align:top}
+.NORMAL,.APPROVED,.FEASIBLE,.VALIDATED{color:var(--ok)}.WARNING{color:var(--warn)}.CRITICAL,.REJECTED,.INFEASIBLE{color:var(--crit)}
+canvas{max-height:300px}pre{white-space:pre-wrap;font-size:12px;margin:0}
+fieldset{border:1px solid var(--line);border-radius:8px;margin:0 0 8px;padding:6px 10px}legend{font-size:12px;color:var(--mut)}
+</style></head><body>
+<header><b>Battery characterization &amp; software BMS lab</b><span id="status">connecting…</span>
+<span class="mut">Virtual BMS development platform, not a certified battery controller. Simulated data is always labelled.</span></header>
+<nav id="nav"></nav><main id="main">
+
+<section id="overview"><div class="grid" id="ov-kpis"></div>
+<div class="card"><h3>Latest experiments</h3><div id="ov-exps"></div></div>
+<div class="card"><h3>Warnings and critical events (latest experiment)</h3><div id="ov-warn"></div></div></section>
+
+<section id="config"><div class="card"><h3>Battery profile</h3>
+<label>Profile <select id="cf-id" onchange="loadProfile()"></select></label><div id="cf-form" class="grid"></div>
+<button class="act" onclick="saveProfile()">Save as new version</button>
+<button class="act" onclick="dupProfile()">Duplicate as…</button><input id="cf-new" placeholder="new id">
+<pre id="cf-out" class="mut"></pre></div>
+<div class="card"><h3>Version history</h3><div id="cf-versions"></div></div></section>
+
+<section id="datasets"><div class="card"><h3>Datasets and provenance</h3><div id="ds-table"></div><pre id="ds-out"></pre></div></section>
+
+<section id="validation"><div class="card"><h3>Model registry</h3><div id="va-models"></div></div>
+<div class="card"><h3>Reference vs simulated voltage</h3><label>File <select id="va-file">
+<option>US06_80SOC</option><option>US06_50SOC</option><option>BJDST_80SOC</option><option>BJDST_50SOC</option>
+<option>FUDS_80SOC</option><option>DST_80SOC</option></select></label><button class="act" onclick="overlay()">Show</button>
+<div id="va-metrics" class="mut"></div><canvas id="va-chart"></canvas><canvas id="va-err"></canvas></div></section>
+
+<section id="control"><div class="grid">
+<div class="card"><h3>Run</h3>
+<label>Profile <select id="ex-profile"></select></label>
+<label>Mode <select id="ex-mode"><option value="manual">Manual</option><option value="auto">Automatic moderation</option><option value="adaptive">Adaptive charging</option></select></label>
+<label>Duration (s) <input id="ex-dur" type="number" value="600"></label><label>Initial SOC <input id="ex-soc" type="number" value="0.7" step="0.01"></label>
+<label>Ambient T (°C) <input id="ex-tamb" type="number" value="25"></label><label>Initial T (°C) <input id="ex-tinit" type="number" value="25"></label>
+<label>Compare with healthy <input id="ex-cmp" type="checkbox"></label>
+<label>Capacity factor (health) <input id="ex-qf" type="number" value="1" step="0.05"></label><label>R0 factor (health) <input id="ex-rf" type="number" value="1" step="0.1"></label>
+<button class="act" onclick="runExp()">Start experiment</button></div>
+<div class="card"><fieldset><legend>Charging</legend><label>Enabled <input id="ch-on" type="checkbox"></label>
+<label>Mode <select id="ch-mode"><option value="constant">Constant current</option><option value="cccv">CC-CV (Li-ion)</option><option value="nicd">Ni-Cd CC + termination</option></select></label>
+<label>Current (A) <input id="ch-i" type="number" value="1" step="0.1"></label><label>Target SOC <input id="ch-tsoc" type="number" value="0.8" step="0.05"></label>
+<label>Target time (s, adaptive) <input id="ch-tt" type="number" value="2700"></label></fieldset>
+<fieldset><legend>Discharging / load</legend><label>Enabled <input id="dc-on" type="checkbox"></label><label>Current (A) <input id="dc-i" type="number" value="1" step="0.1"></label>
+<label>Load profile <select id="ld-prof"><option value="">none</option><option>US06_80SOC</option><option>DST_80SOC</option></select></label></fieldset></div>
+<div class="card"><fieldset><legend>Current perturbation (pulse = total current)</legend><label>Enabled <input id="pu-on" type="checkbox"></label>
+<label>Base (A) <input id="pu-b" type="number" value="1"></label><label>Pulse total (A) <input id="pu-p" type="number" value="2"></label>
+<label>Duration (s) <input id="pu-d" type="number" value="10"></label><label>Interval (s) <input id="pu-iv" type="number" value="60"></label>
+<label>Start (s) <input id="pu-s" type="number" value="0"></label><label>Number of pulses <input id="pu-n" type="number" value="5"></label></fieldset>
+<fieldset><legend>Ripple</legend><label>Enabled <input id="ri-on" type="checkbox"></label><label>DC (A) <input id="ri-dc" type="number" value="0"></label>
+<label>Amplitude (A) <input id="ri-a" type="number" value="0.3" step="0.1"></label><label>Frequency (Hz) <input id="ri-f" type="number" value="0.1" step="0.01"></label>
+<label>Waveform <select id="ri-w"><option>sine</option><option>square</option><option>triangle</option></select></label>
+<label>Start / stop (s) <span><input id="ri-s" type="number" value="0" style="width:60px"><input id="ri-e" type="number" value="600" style="width:60px"></span></label></fieldset></div>
+<div class="card"><h3>Live session (changes apply at the next step boundary)</h3>
+<button class="act" onclick="live('start')">Start</button><button class="act" onclick="live('step')">Step 30 s</button>
+<button class="act" onclick="live('run')">Run 10 steps</button><button class="act" onclick="live('update')">Apply current controls</button>
+<button class="act" onclick="live('pause')">Pause</button><button class="act" onclick="live('resume')">Resume</button>
+<button class="act" onclick="live('stop')">Stop &amp; save</button><button class="act" onclick="live('reset')">Reset</button><pre id="lv-out" class="mut"></pre></div></div>
+<div class="card"><h3>Result</h3><pre id="ex-out"></pre></div></section>
+
+<section id="live"><div class="card"><span id="lv-label" class="mut"></span></div><div class="grid">
+<div class="card"><h3>Voltage (cell)</h3><canvas id="c-V"></canvas></div><div class="card"><h3>Current: requested vs applied</h3><canvas id="c-I"></canvas></div>
+<div class="card"><h3>SOC</h3><canvas id="c-z"></canvas></div><div class="card"><h3>Temperature (PROVISIONAL)</h3><canvas id="c-T"></canvas></div>
+<div class="card"><h3>dV/dt</h3><canvas id="c-dV"></canvas></div><div class="card"><h3>dI/dt</h3><canvas id="c-dI"></canvas></div>
+<div class="card"><h3>dT/dt (°C/min)</h3><canvas id="c-dT"></canvas></div></div></section>
+
+<section id="moderation"><div class="grid"><div class="card"><h3>Evaluate a request</h3>
+<label>SOC <input id="mo-soc" type="number" value="0.015" step="0.005"></label><label>Temperature <input id="mo-t" type="number" value="25"></label>
+<label>Base (A) <input id="mo-b" type="number" value="2"></label><label>Pulse total (A) <input id="mo-p" type="number" value="4"></label>
+<button class="act" onclick="mod()">Predict and moderate</button></div><div class="card"><h3>Decision</h3><div id="mo-out"></div></div></div>
+<div class="card"><h3>Moderation log of the selected experiment</h3><div id="mo-log"></div></div></section>
+
+<section id="analytics"><div class="card"><h3>Compare experiments (select rows)</h3><div id="an-table"></div>
+<label>Metric <select id="an-metric"></select></label><button class="act" onclick="compare()">Compare</button><canvas id="an-chart"></canvas></div></section>
+
+<section id="bms"><div class="grid"><div class="card"><h3>Diagnostics of the selected experiment</h3><button class="act" onclick="diag()">Run diagnostics</button><pre id="bm-diag"></pre></div>
+<div class="card"><h3>EKF on MEASURED CALCE data</h3><label>File <select id="bm-file"><option>US06_80SOC</option><option>US06_50SOC</option><option>BJDST_80SOC</option><option>BJDST_50SOC</option></select></label>
+<label>Initial SOC error <input id="bm-e0" type="number" value="-0.3" step="0.05"></label><label>Current bias (A) <input id="bm-b" type="number" value="0.05" step="0.01"></label>
+<button class="act" onclick="ekf()">Run</button><div id="bm-ekf" class="mut"></div><canvas id="bm-chart"></canvas></div>
+<div class="card"><h3>Cell balancing (SIMULATED)</h3><label>Mode <select id="ba-mode"><option>passive</option><option>active</option></select></label>
+<label>Initial SOCs <input id="ba-z" value="0.5,0.58,0.62,0.53"></label><label>Pack current (A) <input id="ba-i" type="number" value="0"></label>
+<label>Duration (s) <input id="ba-d" type="number" value="7200"></label><button class="act" onclick="balance()">Simulate</button><div id="ba-out" class="mut"></div><canvas id="ba-chart"></canvas></div></div></section>
+
+<section id="charging"><div class="card"><h3>Adaptive charging</h3><label>Profile <select id="cg-profile"></select></label>
+<label>Initial SOC <input id="cg-z0" type="number" value="0.2" step="0.05"></label><label>Target SOC <input id="cg-zt" type="number" value="0.8" step="0.05"></label>
+<label>Target time (min) <input id="cg-t" type="number" value="30"></label><label>Initial T <input id="cg-T" type="number" value="25"></label>
+<label>Capacity factor <input id="cg-qf" type="number" value="1" step="0.05"></label><label>R0 factor <input id="cg-rf" type="number" value="1" step="0.1"></label>
+<button class="act" onclick="charge()">Optimise</button><div id="cg-verdict"></div><div id="cg-table"></div><canvas id="cg-chart"></canvas><canvas id="cg-soc"></canvas></div></section>
+
+<section id="ai"><div class="card"><h3>ML registry (experimental data only)</h3><button class="act" onclick="train('soc_regressor')">Train SOC regressor</button>
+<button class="act" onclick="train('panasonic_anomaly_screen')">Run Panasonic anomaly screen</button><div id="ai-out"></div></div></section>
+
+<section id="learning"><div class="card"><h3>Autonomous learning and model validation centre</h3><div id="le-out"></div></div></section>
+
+<section id="history"><div class="card"><h3>Filter</h3><label>Chemistry <select id="hi-chem"><option value="">any</option><option>li-ion-nmc</option><option>ni-cd</option></select></label>
+<label>Mode <select id="hi-mode"><option value="">any</option><option>manual</option><option>auto</option><option>adaptive</option></select></label>
+<label>Since (YYYY-MM-DD) <input id="hi-since"></label><button class="act" onclick="history_()">Search</button><div id="hi-out"></div></div></section>
+
+<section id="reports"><div class="card"><h3>Reports</h3><button class="act" onclick="rep()">Experiment report (selected)</button>
+<button class="act" onclick="techrep()">Technical report</button><div id="re-out"></div><div id="re-list"></div></div></section>
+</main>
+<script>
+const PAGES=[["overview","Overview"],["config","Battery configuration"],["datasets","Datasets"],["validation","Calibration & validation"],
+["control","Experiment control"],["live","Live simulation"],["moderation","Moderation centre"],["analytics","Performance analytics"],
+["bms","BMS monitoring"],["charging","Adaptive charging"],["ai","AI centre"],["learning","Learning & validation centre"],["history","Historical explorer"],["reports","Reports"]];
+let SEL=null, LIVE=null, CH={}, LV={t:[],I_req:[],I:[],V:[],z:[],T:[]};
+const $=id=>document.getElementById(id), num=id=>parseFloat($(id).value);
+async function api(p,o={}){const r=await fetch(p,{headers:{'content-type':'application/json'},...o,body:o.body?JSON.stringify(o.body):undefined});
+ const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(JSON.stringify(j.detail||j));return j}
+function show(p){document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id==p));document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.p==p));
+ ({overview:ov,config:cfgLoad,datasets:ds,validation:va,moderation:modLog,analytics:an,ai:ai,learning:learn,history:history_,reports:repList})[p]?.()}
+$('nav').innerHTML=PAGES.map(([p,n])=>`<button data-p="${p}" onclick="show('${p}')">${n}</button>`).join('');
+function table(rows,cols,click){if(!rows.length)return'<p class="mut">none</p>';cols=cols||Object.keys(rows[0]);
+ return `<table><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr>${rows.map((r,i)=>`<tr ${click?`style="cursor:pointer" onclick="${click}(${i})"`:''}>${cols.map(c=>{let v=r[c];
+ if(typeof v=='number')v=Math.abs(v)<1e-3&&v!=0?v.toExponential(2):+v.toFixed(4);if(v&&typeof v=='object')v=JSON.stringify(v);return `<td class="${String(v).split(' ')[0]}">${v??''}</td>`}).join('')}</tr>`).join('')}</table>`}
+function chart(id,x,sets,opts={}){CH[id]?.destroy();CH[id]=new Chart($(id),{type:'line',data:{labels:x.map(v=>+(+v).toFixed(1)),datasets:sets.map(s=>({pointRadius:0,borderWidth:1.5,...s}))},
+ options:{animation:false,responsive:true,interaction:{intersect:false,mode:'index'},scales:{x:{ticks:{maxTicksLimit:8}}},...opts}})}
+async function profiles(){return api('/api/profiles')}
+async function fillProfiles(){const ps=await profiles();for(const id of['cf-id','ex-profile','cg-profile']){const v=$(id).value;$(id).innerHTML=ps.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');if(v)$(id).value=v}return ps}
+async function ov(){const h=await api('/api/health');const ex=await api('/api/experiments?limit=10');const ps=await profiles();const p=ps[0].latest;
+ let last=ex[0],k='';if(last){const f=last.features||{};k=`<div class="card"><div class="mut">Latest SOC / V / T (${last.label})</div><div class="kpi">${(100*(f.soc_end??0)).toFixed(1)} % · ${(f.V_min??0).toFixed(3)}–${(f.V_max??0).toFixed(3)} V · ${(f.T_max??0).toFixed(1)} °C</div></div>`}
+ $('ov-kpis').innerHTML=`<div class="card"><div class="mut">Model</div><div class="kpi">${h.model}</div><div class="${h.approval.split(' ')[0]}">${h.approval}</div></div>
+ <div class="card"><div class="mut">Profile ${p.id} (v${p.version})</div><div class="kpi">${p.chemistry} · ${p.capacity_Ah} Ah · ${p.V_nom} V</div><div class="mut">${p.n_series}S${p.n_parallel}P · SOH factor ${p.health?.capacity_factor}</div></div>${k}`;
+ $('ov-exps').innerHTML=table(ex.map(e=>({id:e.id,type:e.type,mode:e.mode,status:e.status,label:e.label,created:e.created_at})),null,'pickExp');window._ex=ex;
+ if(last){const d=await api('/api/experiments/'+last.id);$('ov-warn').innerHTML=table(d.constraint_events.map(e=>({constraint:e.constraint_name,severity:e.severity})))}}
+function pickExp(i){SEL=window._ex[i].id;$('status').textContent='selected '+SEL;loadTS(SEL);show('live')}
+async function cfgLoad(){await fillProfiles();loadProfile()}
+const FIELDS=['name','chemistry','manufacturer','model','n_series','n_parallel','V_nom','V_min','V_max','capacity_Ah','reference_capacity_Ah','I_chg_max','I_dis_max','T_max','initial_soc','T_init','T_amb'];
+async function loadProfile(){const ps=await profiles();const p=ps.find(x=>x.id==$('cf-id').value)?.latest||ps[0].latest;
+ $('cf-form').innerHTML=FIELDS.map(f=>`<label>${f}<input id="pf-${f}" value="${p[f]??''}"></label>`).join('')+`<label>capacity factor<input id="pf-qf" value="${p.health?.capacity_factor??1}"></label><label>R0 factor<input id="pf-rf" value="${p.health?.r0_factor??1}"></label>`;
+ $('cf-out').textContent='Provenance: '+JSON.stringify(p.provenance,null,1);const v=await api(`/api/profiles/${p.id}/versions`);
+ $('cf-versions').innerHTML=table(v.map(x=>({version:x.version,created:x.created_at,capacity_Ah:x.payload.capacity_Ah,V_min:x.payload.V_min,V_max:x.payload.V_max,health:x.payload.health})))}
+async function saveProfile(){const ch={};for(const f of FIELDS){let v=$('pf-'+f).value;ch[f]=['name','chemistry','manufacturer','model'].includes(f)?v:(['n_series','n_parallel'].includes(f)?parseInt(v):parseFloat(v))}
+ ch.health={capacity_factor:num('pf-qf'),r0_factor:num('pf-rf')};try{const r=await api('/api/profiles/'+$('cf-id').value,{method:'PUT',body:ch});$('cf-out').textContent=`Saved version ${r.version}. Recalculated constraints: `+JSON.stringify(r.constraints);loadProfile()}catch(e){$('cf-out').textContent='Rejected: '+e.message}}
+async function dupProfile(){try{await api(`/api/profiles/${$('cf-id').value}/duplicate`,{method:'POST',body:{new_id:$('cf-new').value}});await fillProfiles();$('cf-out').textContent='duplicated'}catch(e){$('cf-out').textContent=e.message}}
+async function ds(){const d=await api('/api/datasets');window._ds=d;$('ds-table').innerHTML=table(d.map(x=>({id:x.id,chemistry:x.chemistry,format:x.format,source_type:x.source_type,approval:x.approval,sha256:(x.sha256||'').slice(0,12),source:x.sources.map(s=>s.url).join(' '),history:x.cleaning_log.map(l=>l.detail).join('; ')})),null,'clean')}
+async function clean(i){const id=window._ds[i].id;$('ds-out').textContent='checking '+id+'…';try{const r=await api(`/api/datasets/${id}/clean`,{method:'POST'});$('ds-out').textContent=JSON.stringify(r,null,1);ds()}catch(e){$('ds-out').textContent=e.message}}
+async function va(){const v=await api('/api/validation');$('va-models').innerHTML=table(v.models.map(m=>({id:m.id,status:m.status,approval:m.approval,params:m.params,envelope:m.validity_envelope})))+`<p class="mut">Reports: ${v.reports.join(', ')}</p>`}
+async function overlay(){const r=await api('/api/validation/overlay/'+$('va-file').value);const m=r.metrics_mV;
+ $('va-metrics').innerHTML=`<b>${r.file}</b> (role: ${r.role}) · MAE ${m.MAE.toFixed(2)} mV · RMSE ${m.RMSE.toFixed(2)} mV · MaxAE ${m.MaxAE.toFixed(1)} mV · bias ${m.Bias.toFixed(2)} mV · scored: ${r.scored_region}`;
+ chart('va-chart',r.t,[{label:'measured V',data:r.V_measured},{label:'simulated V',data:r.V_simulated}]);chart('va-err',r.t,[{label:'error mV',data:r.V_simulated.map((v,i)=>1000*(v-r.V_measured[i]))}])}
+function expCfg(){const c={duration_s:num('ex-dur'),initial_soc:num('ex-soc'),T_amb:num('ex-tamb'),T_init:num('ex-tinit'),mode:$('ex-mode').value,compare_healthy:$('ex-cmp').checked,load:{}};
+ if($('ch-on').checked){c.charging={enabled:true,mode:$('ch-mode').value=='nicd'?'constant':$('ch-mode').value,strategy:$('ch-mode').value,current_A:num('ch-i'),target_soc:num('ch-tsoc')}}
+ if($('dc-on').checked)c.discharging={enabled:true,current_A:num('dc-i')};if($('ld-prof').value)c.load.drive={name:$('ld-prof').value};
+ if($('pu-on').checked)c.load.pulse={base_A:num('pu-b'),pulse_A:num('pu-p'),duration_s:num('pu-d'),interval_s:num('pu-iv'),start_s:num('pu-s'),n:parseInt($('pu-n').value)};
+ if($('ri-on').checked)c.load.ripple={dc_A:num('ri-dc'),amplitude_A:num('ri-a'),freq_Hz:num('ri-f'),waveform:$('ri-w').value,start_s:num('ri-s'),stop_s:num('ri-e')};
+ if(c.mode=='adaptive')c.adaptive={target_soc:num('ch-tsoc'),target_time_s:num('ch-tt')};return c}
+async function setHealth(pid){const qf=num('ex-qf'),rf=num('ex-rf');const p=(await profiles()).find(x=>x.id==pid).latest;
+ if(p.health?.capacity_factor!=qf||p.health?.r0_factor!=rf)await api('/api/profiles/'+pid,{method:'PUT',body:{health:{capacity_factor:qf,r0_factor:rf}}})}
+async function runExp(){$('ex-out').textContent='running…';try{const pid=$('ex-profile').value;await setHealth(pid);const r=await api('/api/experiments',{method:'POST',body:{profile_id:pid,config:expCfg()}});SEL=r.id;
+ $('ex-out').textContent=JSON.stringify({id:r.id,label:r.label,dt_s:r.dt_s,overall_severity:r.overall_severity,moderation_events:r.moderation_events,features:r.features,charging:r.charging&&{...r.charging,series:undefined},healthy_comparison:r.healthy_comparison?.delta},null,1);loadTS(r.id)}catch(e){$('ex-out').textContent='Rejected: '+e.message}}
+async function loadTS(id){const t=await api(`/api/experiments/${id}/timeseries`);if(!t.t)return;$('lv-label').textContent=`${id}: ${t.label}`;drawLive(t)}
+function drawLive(t){chart('c-V',t.t,[{label:'V',data:t.V}]);chart('c-I',t.t,[{label:'requested',data:t.I_req,borderDash:[4,3]},{label:'applied',data:t.I}]);
+ chart('c-z',t.t,[{label:'SOC',data:t.z}]);chart('c-T',t.t,[{label:'T',data:t.T}]);const d=(a)=>a.map((v,i)=>i?(v-a[i-1])/((t.t[i]-t.t[i-1])||1):0);
+ chart('c-dV',t.t,[{label:'dV/dt',data:t.dVdt||d(t.V)}]);chart('c-dI',t.t,[{label:'dI/dt',data:t.dIdt||d(t.I)}]);chart('c-dT',t.t,[{label:'dT/dt',data:t.dTdt||d(t.T).map(x=>60*x)}])}
+async function live(a){try{const c=expCfg();const lc={...c,discharge_A:c.discharging?.current_A||0,charge_A:c.charging?.current_A||0};
+ if(a=='start'){const r=await api('/api/live',{method:'POST',body:{profile_id:$('ex-profile').value,config:lc}});LIVE=r.session;LV={t:[],I_req:[],I:[],V:[],z:[],T:[]};$('lv-out').textContent='session '+LIVE+' · '+r.label;return}
+ if(!LIVE)throw new Error('start a session first');
+ if(a=='step'||a=='run'){for(let i=0;i<(a=='run'?10:1);i++){const r=await api(`/api/live/${LIVE}/step?seconds=30`,{method:'POST'});if(!r.samples){$('lv-out').textContent='state '+r.state;break}
+  for(const k in LV)LV[k].push(...r.samples[k]);$('lv-out').textContent=`t=${r.t}s · ${r.label}`+(r.moderation.length?` · moderated: ${JSON.stringify(r.moderation)}`:'');}drawLive(LV);$('lv-label').textContent='live session '+LIVE;return}
+ if(a=='update'){const r=await api(`/api/live/${LIVE}/update`,{method:'POST',body:lc});$('lv-out').textContent=JSON.stringify(r);return}
+ const r=await api(`/api/live/${LIVE}/${a}`,{method:'POST'});$('lv-out').textContent=JSON.stringify(r).slice(0,800);if(a=='stop'&&r.experiment_id)SEL=r.experiment_id}catch(e){$('lv-out').textContent=e.message}}
+async function mod(){const r=await api('/api/moderate',{method:'POST',body:{state:{soc:num('mo-soc'),T:num('mo-t')},request:{base_A:num('mo-b'),pulse_A:num('mo-p')}}});
+ $('mo-out').innerHTML=table([{requested_pulse_A:r.requested_pulse_A,permitted_pulse_A:r.permitted_pulse_A,predicted_V_min:r.predicted_V_min,predicted_T_max:r.predicted_T_max,severity:r.severity,action:r.action,mode:r.mode,reason:r.reason}])}
+async function modLog(){if(!SEL){$('mo-log').innerHTML='<p class="mut">select an experiment in Overview or History</p>';return}const e=await api('/api/experiments/'+SEL);$('mo-log').innerHTML=table(e.moderation_events)}
+async function an(){const ex=await api('/api/experiments?limit=50');window._an=ex;$('an-table').innerHTML=`<table><tr><th></th><th>id</th><th>type</th><th>mode</th><th>label</th></tr>${ex.map((e,i)=>`<tr><td><input type=checkbox id="an-${i}"></td><td>${e.id}</td><td>${e.type}</td><td>${e.mode}</td><td>${e.label}</td></tr>`).join('')}</table>`;
+ const keys=[...new Set(ex.flatMap(e=>Object.keys(e.features||{}).filter(k=>typeof e.features[k]=='number')))];$('an-metric').innerHTML=keys.map(k=>`<option>${k}</option>`).join('')}
+function compare(){const sel=window._an.filter((e,i)=>$('an-'+i).checked);const k=$('an-metric').value;CH['an-chart']?.destroy();
+ CH['an-chart']=new Chart($('an-chart'),{type:'bar',data:{labels:sel.map(e=>e.id.slice(-12)),datasets:[{label:k,data:sel.map(e=>e.features[k])}]},options:{animation:false}})}
+async function diag(){if(!SEL)return $('bm-diag').textContent='select an experiment first';$('bm-diag').textContent=JSON.stringify(await api(`/api/experiments/${SEL}/diagnostics`,{method:'POST'}),null,1)}
+async function ekf(){const r=await api('/api/bms/ekf_demo',{method:'POST',body:{file:$('bm-file').value,initial_error:num('bm-e0'),current_bias_A:num('bm-b')}});
+ $('bm-ekf').textContent=`${r.data} · EKF RMSE after 600 s: ${(100*r.ekf_rmse_after_600s).toFixed(2)} % SOC`;chart('bm-chart',r.t,[{label:'reference (CC from full)',data:r.soc_ref},{label:'EKF',data:r.soc_ekf},{label:'coulomb counting (biased)',data:r.soc_cc}])}
+async function balance(){const r=await api('/api/pack/balance',{method:'POST',body:{mode:$('ba-mode').value,soc0:$('ba-z').value.split(',').map(Number),I_pack_A:num('ba-i'),duration_s:num('ba-d')}});
+ const m=$('ba-mode').value;$('ba-out').textContent=`${r.label} · ΔSOC off ${r.off.dSOC_final.toFixed(4)} vs ${m} ${r[m].dSOC_final.toFixed(4)} · balancing energy ${r[m].balancing_energy_Wh.toFixed(3)} Wh · time ${r[m].balancing_time_s} s · ΔV ${r[m].dV_final_mV.toFixed(1)} mV`;
+ chart('ba-chart',r[m].t,r[m].z[0].map((_,c)=>({label:'cell '+(c+1)+' ('+m+')',data:r[m].z.map(row=>row[c])})).concat(r.off.z[0].map((_,c)=>({label:'cell '+(c+1)+' (off)',borderDash:[4,3],data:r.off.z.map(row=>row[c])}))))}
+async function charge(){$('cg-verdict').textContent='optimising…';try{const r=await api('/api/charging/optimize',{method:'POST',body:{profile_id:$('cg-profile').value,initial_soc:num('cg-z0'),target_soc:num('cg-zt'),target_time_s:60*num('cg-t'),T_init:num('cg-T'),health:{capacity_factor:num('cg-qf'),r0_factor:num('cg-rf')}}});
+ if(r.chemistry=='ni-cd'){$('cg-verdict').innerHTML=`<b>${r.status}</b>`;$('cg-table').innerHTML=table([{...r.strategy,series:undefined}]);return}
+ $('cg-verdict').innerHTML=`<p class="${r.verdict}"><b>${r.verdict}</b>: ${r.feasibility?.reason} (fastest within limits: ${(r.feasibility?.t_min_s/60).toFixed(1)} min)</p><p class="mut">${r.notes.join(' · ')}</p>`;
+ const S=['conventional','fixed','adaptive'];$('cg-table').innerHTML=table(S.map(s=>({strategy:r[s].strategy,reached:r[s].reached,t_charge_min:r[s].t_charge_s&&r[s].t_charge_s/60,final_soc:r[s].final_soc,energy_in_Wh:r[s].energy_in_Wh,losses_Wh:r[s].losses_Wh,T_max_C:r[s].T_max_C,V_max_V:r[s].V_max_V,I_max_A:r[s].I_max_A,cost_J:r[s].cost_J})));
+ const L=Math.max(...S.map(s=>r[s].series.t.length));const x=[...Array(L).keys()];chart('cg-chart',x,S.map(s=>({label:s+' current (A)',data:r[s].series.I.map(v=>-v)})));chart('cg-soc',x,S.map(s=>({label:s+' SOC',data:r[s].series.z})))}catch(e){$('cg-verdict').textContent=e.message}}
+async function ai(){const m=await api('/api/ml/models');$('ai-out').innerHTML=m.map(x=>x.task=='panasonic_anomaly_screen'?`<h4>Panasonic anomaly screen (${x.n_flagged}/${x.n_cells} flagged)</h4><p class="mut">${x.note}</p>`+table(x.ranking.slice(0,10)):
+ `<h4>${x.task} v${x.version}: <span class="${x.approval}">${x.approval}</span></h4><p class="mut">${x.data} · split by ${x.split_unit} · ${x.acceptance}</p>`+table([{algorithm:x.algorithm,val_rmse:x.val_rmse,test_rmse:x.test_rmse,n_train:x.n_train,n_test:x.n_test,candidates:x.candidates_val_rmse}])+table(Object.entries(x.test_per_file).map(([k,v])=>({file:k,...v})))).join('')}
+async function train(task){$('ai-out').textContent='training…';try{await api('/api/ml/train',{method:'POST',body:{task}});ai()}catch(e){$('ai-out').textContent=e.message}}
+async function learn(){const v=await api('/api/validation');const m=await api('/api/ml/models');
+ $('le-out').innerHTML=`<p>Loop: learn → predict → compare → validate → identify errors → improve → retest → approve/reject → monitor. Candidates replace an approved model only if they are not worse on validation data; test data is scored once.</p>
+ <h4>Physics model versions</h4>`+table(v.models.map(x=>({id:x.id,approval:x.approval,status:x.status,source_run:x.source_run})))+
+ `<h4>Detected weaknesses / recommended experiments</h4><ul><li>Below 10 % SOC: 27–42 mV RMSE → recommend low-SOC pulse tests on SP2-type cells.</li><li>Only 25 °C data used → recommend CALCE 0 °C / 45 °C drive cycles (available, not yet used).</li>
+ <li>No temperature logged → thermal model PROVISIONAL; recommend tests with a surface thermocouple.</li><li>No real Ni-Cd measurements → Ni-Cd stays NOT VALIDATED.</li><li>SOC ML regressor rejected (test RMSE above threshold) → more training cycles needed.</li></ul>
+ <h4>ML versions</h4>`+table(m.filter(x=>x.version).map(x=>({task:x.task,version:x.version,approval:x.approval,val_rmse:x.val_rmse,test_rmse:x.test_rmse,trained_at:x.trained_at})))}
+async function history_(){const q=new URLSearchParams();if($('hi-chem').value)q.set('chemistry',$('hi-chem').value);if($('hi-mode').value)q.set('mode',$('hi-mode').value);if($('hi-since').value)q.set('since',$('hi-since').value);
+ const ex=await api('/api/experiments?'+q);window._ex=ex;$('hi-out').innerHTML=table(ex.map(e=>({id:e.id,chemistry:e.chemistry,profile:e.profile_id+' v'+e.profile_version,type:e.type,mode:e.mode,status:e.status,created:e.created_at,soc_start:e.features.soc_start,soc_end:e.features.soc_end,I_max:e.features.I_max,ripple_rms:e.features.I_ripple_rms_A})),null,'pickExp')}
+async function rep(){if(!SEL)return $('re-out').textContent='select an experiment first';const r=await api(`/api/experiments/${SEL}/report`,{method:'POST'});$('re-out').innerHTML=`<a href="/api/files?path=${encodeURIComponent(r.html)}" target=_blank>HTML report</a> · <a href="/api/files?path=${encodeURIComponent(r.csv)}">CSV</a>`;repList()}
+async function techrep(){const r=await api('/api/reports/technical',{method:'POST'});$('re-out').innerHTML=`<a href="/api/files?path=${encodeURIComponent(r.html)}" target=_blank>Technical report</a>`}
+async function repList(){const r=await api('/api/reports');$('re-list').innerHTML=table(r.map(x=>({id:x.id,experiment:x.experiment_id,kind:x.kind,created:x.created_at})))}
+(async()=>{try{const h=await api('/api/health');$('status').textContent=`backend ok · ${h.model} · ${h.approval.split(' -')[0]}`;await fillProfiles();show('overview')}catch(e){$('status').textContent='backend unreachable: '+e.message}})();
+</script></body></html>

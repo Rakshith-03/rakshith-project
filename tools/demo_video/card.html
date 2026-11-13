@@ -1,0 +1,14 @@
+<!doctype html><html><head><meta charset="utf-8"><title>card</title><style>
+body{margin:0;height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 30% 20%,#1d3557,#0b132b);
+ color:#f1f5f9;font-family:Segoe UI,system-ui,sans-serif}
+.c{width:1400px}h1{font-size:76px;margin:0 0 8px;letter-spacing:-1px}h2{font-size:34px;font-weight:400;color:#93c5fd;margin:0 0 48px}
+li{font-size:32px;margin:18px 0;list-style:none;opacity:0;transform:translateY(12px);transition:all .6s}li.in{opacity:1;transform:none}
+li::before{content:"";display:inline-block;width:12px;height:12px;border-radius:50%;background:#38bdf8;margin-right:20px;vertical-align:middle}
+li.pass::before{background:#22c55e}li.fail::before{background:#ef4444}
+.t{font-variant-numeric:tabular-nums;color:#94a3b8;font-size:24px;margin-left:12px}
+</style></head><body><div class="c"><h1 id="h"></h1><h2 id="s"></h2><ul id="l"></ul></div><script>
+function card(t,s,lines){h.textContent=t;s_.textContent=s;l.innerHTML='';lines.forEach((x,i)=>add(x,'',i*900))}
+const s_=document.getElementById('s');
+function add(x,cls,delay=0){const li=document.createElement('li');li.innerHTML=x;if(cls)li.className=cls;l.appendChild(li);
+ setTimeout(()=>li.classList.add('in'),delay+50)}
+</script></body></html>

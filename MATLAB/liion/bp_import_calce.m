@@ -1,0 +1,19 @@
+function [D, Q] = bp_import_calce(file)
+%BP_IMPORT_CALCE Read a CALCE low-current OCV workbook into SI units. The source file is never modified.
+% D: t_s, step, V (V), I_A (A, + = charge, as in the file), T_C. Q: data-quality record.
+sh = sheetnames(file);
+T = readtable(file, 'Sheet', sh(1), 'VariableNamingRule', 'preserve');
+cols = string(T.Properties.VariableNames);
+need = ["Duration (sec)", "Pgm step", "mV", "mA", "Temperature"];
+assert(all(ismember(need, cols)), "Unexpected CALCE columns: %s", strjoin(cols, ", "));
+
+D = table(T.("Duration (sec)"), T.("Pgm step"), T.mV / 1000, T.mA / 1000, T.Temperature, ...
+    'VariableNames', ["t_s", "step", "V", "I_A", "T_C"]);
+dt = diff(D.t_s);
+Q = struct('file', file, 'sheet', sh(1), 'rows', height(D), ...
+    'missing_V', nnz(isnan(D.V)), 'missing_I', nnz(isnan(D.I_A)), 'missing_T', nnz(isnan(D.T_C)), ...
+    'duplicate_rows', height(D) - height(unique(D, 'rows')), ...
+    'nonmonotonic_time', nnz(dt <= 0), 'dt_median_s', median(dt), 'dt_max_s', max(dt), ...
+    'V_range_V', [min(D.V) max(D.V)], 'I_range_A', [min(D.I_A) max(D.I_A)], ...
+    'V_resolution_V', 1e-3, 'I_resolution_A', 1e-3, 'source_type', "MEASURED (CALCE)");
+end
